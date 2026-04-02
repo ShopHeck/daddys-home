@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { PricingPlanButton } from '@/components/landing/PricingPlanButton';
+
 const howItWorks = [
   {
     step: '01',
@@ -20,20 +22,20 @@ const howItWorks = [
 
 const tiers = [
   {
-    name: 'Free',
+    name: 'Free' as const,
     price: '$0',
     docs: '50 docs/month',
     features: ['Handlebars templating', 'PDF rendering', 'API access', 'Usage analytics']
   },
   {
-    name: 'Pro',
+    name: 'Pro' as const,
     price: '$29/mo',
     docs: '5,000 docs/month',
     features: ['Handlebars templating', 'PDF rendering', 'API access', 'Usage analytics', 'Priority rendering', 'Email support'],
     featured: true
   },
   {
-    name: 'Business',
+    name: 'Business' as const,
     price: '$99/mo',
     docs: '50,000 docs/month',
     features: ['Handlebars templating', 'PDF rendering', 'API access', 'Usage analytics', 'Priority rendering', 'Custom templates', 'Dedicated support', 'SLA']
@@ -172,9 +174,7 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-              <Link className="mt-8 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500" href="/auth/signup">
-                Choose {tier.name}
-              </Link>
+              <PricingPlanButton tierName={tier.name} />
             </div>
           ))}
         </div>

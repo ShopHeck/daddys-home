@@ -19,20 +19,24 @@ enum RenderStatus {
 }
 
 model User {
-  id            String        @id @default(cuid())
-  name          String?
-  email         String        @unique
-  emailVerified DateTime?
-  password      String?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  apiKeys       ApiKey[]
-  templates     Template[]
-  usageRecords  UsageRecord[]
-  tier          Tier          @default(FREE)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                     String        @id @default(cuid())
+  name                   String?
+  email                  String        @unique
+  emailVerified          DateTime?
+  password               String?
+  image                  String?
+  accounts               Account[]
+  sessions               Session[]
+  apiKeys                ApiKey[]
+  templates              Template[]
+  usageRecords           UsageRecord[]
+  tier                   Tier          @default(FREE)
+  stripeCustomerId       String?       @unique
+  stripeSubscriptionId   String?
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
 }
 
 model ApiKey {

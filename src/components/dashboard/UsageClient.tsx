@@ -113,7 +113,7 @@ export function UsageClient() {
               <h2 className="text-lg font-semibold text-white">Need more throughput?</h2>
               <p className="mt-2 text-sm text-slate-300">Upgrade to Pro for 5,000 documents per month and priority rendering.</p>
             </div>
-            <Link className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500" href="/#pricing">
+            <Link className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500" href="/dashboard/billing">
               Upgrade plan
             </Link>
           </div>
