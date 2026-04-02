@@ -78,6 +78,9 @@ export default async function DashboardOverviewPage() {
         <Link className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" href="/dashboard/api-keys">
           Generate API Key
         </Link>
+        <Link className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" href="/dashboard/render-history">
+          View Render History
+        </Link>
       </div>
     </div>
   );

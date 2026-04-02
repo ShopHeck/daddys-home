@@ -78,12 +78,20 @@ export async function recordUsage(params: {
   userId: string;
   templateId?: string;
   status?: 'SUCCESS' | 'FAILED';
+  durationMs?: number;
+  fileSizeBytes?: number;
+  errorMessage?: string;
+  apiKeyId?: string;
 }) {
   return prisma.usageRecord.create({
     data: {
       userId: params.userId,
       templateId: params.templateId,
-      status: params.status ?? 'SUCCESS'
+      status: params.status ?? 'SUCCESS',
+      durationMs: params.durationMs,
+      fileSizeBytes: params.fileSizeBytes,
+      errorMessage: params.errorMessage,
+      apiKeyId: params.apiKeyId
     }
   });
 }

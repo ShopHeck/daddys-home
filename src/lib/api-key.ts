@@ -58,3 +58,7 @@ export async function validateApiKey(key: string): Promise<ValidatedApiKey | nul
 export function getAuthenticatedUserId(request: Request | NextRequest): string | null {
   return request.headers.get('x-user-id');
 }
+
+export function getAuthenticatedApiKeyId(request: Request | NextRequest): string | null {
+  return request.headers.get('x-api-key-id');
+}
