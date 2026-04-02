@@ -1,6 +1,8 @@
 import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 
+import { sendEmail } from '@/lib/email';
+import { paymentConfirmationEmail } from '@/lib/email-templates';
 import { prisma } from '@/lib/prisma';
 import { priceIdToTier, stripe } from '@/lib/stripe';
 import type { Tier } from '@/types';
@@ -61,6 +63,36 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       tier: getTierForSubscription(subscription)
     }
   });
+
+  void (async () => {
+    try {
+      const updatedUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, name: true, tier: true }
+      });
+
+      if (!updatedUser || updatedUser.tier === 'FREE') {
+        return;
+      }
+
+      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      const planName = updatedUser.tier === 'BUSINESS' ? 'Business ($99/mo)' : 'Pro ($29/mo)';
+      const amount = updatedUser.tier === 'BUSINESS' ? '$99' : '$29';
+
+      await sendEmail({
+        to: updatedUser.email,
+        subject: 'Your DocForge subscription is active!',
+        html: paymentConfirmationEmail({
+          name: updatedUser.name || 'there',
+          planName,
+          amount,
+          dashboardUrl: `${baseUrl}/dashboard`
+        })
+      });
+    } catch (error) {
+      console.error('Payment confirmation email failed:', error);
+    }
+  })();
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
