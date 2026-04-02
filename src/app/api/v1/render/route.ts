@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getAuthenticatedApiKeyId, getAuthenticatedUserId } from '@/lib/api-key';
 import { prisma } from '@/lib/prisma';
 import { renderPdfFromTemplate } from '@/lib/renderer';
+import { validateDataAgainstSchema, type VariableSchema } from '@/lib/template-variables';
 import { checkAndSendUsageAlerts } from '@/lib/usage-alerts';
 import { getUsageSummary, recordUsage, assertUsageWithinLimit } from '@/lib/usage';
 import type { RenderRequestBody } from '@/types';
@@ -43,12 +44,19 @@ export async function POST(request: Request) {
     select: {
       id: true,
       content: true,
-      currentVersion: true
+      currentVersion: true,
+      variableSchema: true
     }
   });
 
   if (!template) {
     return NextResponse.json({ error: 'Template not found' }, { status: 404 });
+  }
+
+  let validationWarnings: Array<{ path: string; message: string; severity: 'warning' }> = [];
+
+  if (body.validateSchema && template.variableSchema) {
+    validationWarnings = validateDataAgainstSchema(body.data, template.variableSchema as VariableSchema);
   }
 
   const currentVersion = await prisma.templateVersion.findUnique({
@@ -108,12 +116,18 @@ export async function POST(request: Request) {
       }
     })();
 
+    const headers: HeadersInit = {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename="document.pdf"'
+    };
+
+    if (validationWarnings.length > 0) {
+      headers['X-Schema-Warnings'] = JSON.stringify(validationWarnings);
+    }
+
     return new NextResponse(pdf, {
       status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="document.pdf"'
-      }
+      headers
     });
   } catch (error) {
     const durationMs = Math.round(performance.now() - startTime);
