@@ -18,6 +18,7 @@ const navigation = [
   { href: '/dashboard/templates', label: 'Templates' },
   { href: '/dashboard/api-keys', label: 'API Keys' },
   { href: '/dashboard/usage', label: 'Usage' },
+  { href: '/dashboard/render-history', label: 'Render History' },
   {
     href: '/dashboard/billing',
     label: 'Billing',

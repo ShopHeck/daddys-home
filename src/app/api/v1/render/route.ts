@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getAuthenticatedUserId } from '@/lib/api-key';
+import { getAuthenticatedApiKeyId, getAuthenticatedUserId } from '@/lib/api-key';
 import { prisma } from '@/lib/prisma';
 import { renderPdfFromTemplate } from '@/lib/renderer';
 import { checkAndSendUsageAlerts } from '@/lib/usage-alerts';
@@ -11,6 +11,7 @@ export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   const userId = getAuthenticatedUserId(request);
+  const apiKeyId = getAuthenticatedApiKeyId(request);
 
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -49,17 +50,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Template not found' }, { status: 404 });
   }
 
+  const startTime = performance.now();
+
   try {
     const pdf = await renderPdfFromTemplate({
       template: template.content,
       data: body.data,
       options: body.options
     });
+    const durationMs = Math.round(performance.now() - startTime);
 
     await recordUsage({
       userId,
       templateId: template.id,
-      status: 'SUCCESS'
+      status: 'SUCCESS',
+      durationMs,
+      fileSizeBytes: pdf.length,
+      apiKeyId: apiKeyId ?? undefined
     });
 
     void (async () => {
@@ -97,10 +104,16 @@ export async function POST(request: Request) {
       }
     });
   } catch (error) {
+    const durationMs = Math.round(performance.now() - startTime);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
     await recordUsage({
       userId,
       templateId: template.id,
-      status: 'FAILED'
+      status: 'FAILED',
+      durationMs,
+      errorMessage,
+      apiKeyId: apiKeyId ?? undefined
     });
 
     if (error instanceof Error && /(Parse error|Expecting|got)/i.test(error.message)) {

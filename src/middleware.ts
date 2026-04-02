@@ -107,6 +107,7 @@ export async function middleware(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-user-id', payload.userId);
+  requestHeaders.set('x-api-key-id', payload.apiKeyId);
 
   const response = NextResponse.next({
     request: {
