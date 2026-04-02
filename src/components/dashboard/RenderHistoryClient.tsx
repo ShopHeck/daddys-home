@@ -17,6 +17,7 @@ type RenderHistoryRecord = {
   createdAt: string;
   templateName: string | null;
   templateId: string | null;
+  templateVersion: number | null;
   apiKeyName: string | null;
   apiKeyPrefix: string | null;
 };
@@ -385,7 +386,16 @@ export function RenderHistoryClient() {
                             <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-rose-500/10 text-rose-400">FAILED</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-slate-300">{record.templateName ?? '—'}</td>
+                        <td className="px-6 py-4 text-slate-300">
+                          {record.templateName ? (
+                            <>
+                              {record.templateName}
+                              {record.templateVersion ? <span className="ml-1 text-xs text-slate-500">v{record.templateVersion}</span> : null}
+                            </>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-slate-300">
                           {record.apiKeyName && record.apiKeyPrefix ? `${record.apiKeyName} (${record.apiKeyPrefix}...)` : '—'}
                         </td>

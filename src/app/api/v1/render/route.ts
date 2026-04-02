@@ -42,13 +42,24 @@ export async function POST(request: Request) {
     },
     select: {
       id: true,
-      content: true
+      content: true,
+      currentVersion: true
     }
   });
 
   if (!template) {
     return NextResponse.json({ error: 'Template not found' }, { status: 404 });
   }
+
+  const currentVersion = await prisma.templateVersion.findUnique({
+    where: {
+      templateId_version: {
+        templateId: template.id,
+        version: template.currentVersion
+      }
+    },
+    select: { id: true }
+  });
 
   const startTime = performance.now();
 
@@ -63,6 +74,7 @@ export async function POST(request: Request) {
     await recordUsage({
       userId,
       templateId: template.id,
+      templateVersionId: currentVersion?.id,
       status: 'SUCCESS',
       durationMs,
       fileSizeBytes: pdf.length,
@@ -110,6 +122,7 @@ export async function POST(request: Request) {
     await recordUsage({
       userId,
       templateId: template.id,
+      templateVersionId: currentVersion?.id,
       status: 'FAILED',
       durationMs,
       errorMessage,

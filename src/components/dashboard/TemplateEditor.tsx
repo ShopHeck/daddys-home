@@ -3,7 +3,7 @@
 import Handlebars from 'handlebars/dist/handlebars';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { CodeEditor } from '@/components/dashboard/CodeEditor';
 
@@ -33,6 +33,69 @@ const defaultSample = `{
 
 const tabButtonClassName = 'rounded-lg px-3 py-1.5 text-sm font-medium transition';
 
+type TemplateVersionListItem = {
+  id: string;
+  version: number;
+  name: string;
+  createdAt: string;
+};
+
+type DiffLine = {
+  kind: 'added' | 'removed' | 'unchanged';
+  value: string;
+};
+
+function getVersionDiff(previousContent: string, currentContent: string) {
+  const previousLines = previousContent.split('\n');
+  const currentLines = currentContent.split('\n');
+  const matrix = Array.from({ length: previousLines.length + 1 }, () => Array<number>(currentLines.length + 1).fill(0));
+
+  for (let previousIndex = previousLines.length - 1; previousIndex >= 0; previousIndex -= 1) {
+    for (let currentIndex = currentLines.length - 1; currentIndex >= 0; currentIndex -= 1) {
+      if (previousLines[previousIndex] === currentLines[currentIndex]) {
+        matrix[previousIndex][currentIndex] = matrix[previousIndex + 1][currentIndex + 1] + 1;
+        continue;
+      }
+
+      matrix[previousIndex][currentIndex] = Math.max(matrix[previousIndex + 1][currentIndex], matrix[previousIndex][currentIndex + 1]);
+    }
+  }
+
+  const diff: DiffLine[] = [];
+  let previousIndex = 0;
+  let currentIndex = 0;
+
+  while (previousIndex < previousLines.length && currentIndex < currentLines.length) {
+    if (previousLines[previousIndex] === currentLines[currentIndex]) {
+      diff.push({ kind: 'unchanged', value: previousLines[previousIndex] });
+      previousIndex += 1;
+      currentIndex += 1;
+      continue;
+    }
+
+    if (matrix[previousIndex + 1][currentIndex] >= matrix[previousIndex][currentIndex + 1]) {
+      diff.push({ kind: 'removed', value: previousLines[previousIndex] });
+      previousIndex += 1;
+      continue;
+    }
+
+    diff.push({ kind: 'added', value: currentLines[currentIndex] });
+    currentIndex += 1;
+  }
+
+  while (previousIndex < previousLines.length) {
+    diff.push({ kind: 'removed', value: previousLines[previousIndex] });
+    previousIndex += 1;
+  }
+
+  while (currentIndex < currentLines.length) {
+    diff.push({ kind: 'added', value: currentLines[currentIndex] });
+    currentIndex += 1;
+  }
+
+  return diff;
+}
+
 export function TemplateEditor({ templateId }: TemplateEditorProps) {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -48,6 +111,26 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
   const [error, setError] = useState('');
   const [previewError, setPreviewError] = useState('');
   const [renderError, setRenderError] = useState('');
+  const [versions, setVersions] = useState<TemplateVersionListItem[]>([]);
+  const [currentVersion, setCurrentVersion] = useState(1);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const [selectedVersionContent, setSelectedVersionContent] = useState<string | null>(null);
+  const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+
+  const selectedVersion = useMemo(
+    () => versions.find((version) => version.id === selectedVersionId) ?? null,
+    [selectedVersionId, versions]
+  );
+
+  const selectedVersionDiff = useMemo(() => {
+    if (selectedVersionContent === null) {
+      return [];
+    }
+
+    return getVersionDiff(selectedVersionContent, content);
+  }, [content, selectedVersionContent]);
 
   useEffect(() => {
     if (!templateId) {
@@ -61,6 +144,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
         name?: string;
         description?: string | null;
         content?: string;
+        currentVersion?: number;
       } | null;
 
       if (!response.ok || !payload?.name || !payload.content) {
@@ -72,10 +156,39 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       setName(payload.name);
       setDescription(payload.description ?? '');
       setContent(payload.content);
+      setCurrentVersion(payload.currentVersion ?? 1);
       setLoading(false);
     };
 
     void loadTemplate();
+  }, [templateId]);
+
+  useEffect(() => {
+    if (!templateId) {
+      return;
+    }
+
+    const loadVersions = async () => {
+      setVersionsLoading(true);
+
+      const response = await fetch(`/api/dashboard/templates/${templateId}/versions`, { cache: 'no-store' });
+      const payload = (await response.json().catch(() => null)) as {
+        error?: string;
+        currentVersion?: number;
+        versions?: TemplateVersionListItem[];
+      } | null;
+
+      if (!response.ok || !payload?.versions) {
+        setVersionsLoading(false);
+        return;
+      }
+
+      setVersions(payload.versions);
+      setCurrentVersion(payload.currentVersion ?? 1);
+      setVersionsLoading(false);
+    };
+
+    void loadVersions();
   }, [templateId]);
 
   useEffect(() => {
@@ -144,7 +257,14 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, description, content })
     });
-    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    const payload = (await response.json().catch(() => null)) as {
+      error?: string;
+      id?: string;
+      name?: string;
+      description?: string | null;
+      content?: string;
+      currentVersion?: number;
+    } | null;
 
     if (!response.ok) {
       setError(payload?.error ?? 'Unable to save template.');
@@ -152,7 +272,103 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       return;
     }
 
-    router.push('/dashboard/templates');
+    if (!templateId && payload?.id) {
+      router.push(`/dashboard/templates/${payload.id}/edit`);
+      router.refresh();
+      return;
+    }
+
+    if (templateId && payload) {
+      setName(payload.name ?? name);
+      setDescription(payload.description ?? '');
+      setContent(payload.content ?? content);
+      setCurrentVersion(payload.currentVersion ?? currentVersion);
+      setSelectedVersionId(null);
+      setSelectedVersionContent(null);
+
+      const versionsResponse = await fetch(`/api/dashboard/templates/${templateId}/versions`, { cache: 'no-store' });
+      const versionsPayload = (await versionsResponse.json().catch(() => null)) as {
+        currentVersion?: number;
+        versions?: TemplateVersionListItem[];
+      } | null;
+
+      if (versionsResponse.ok && versionsPayload?.versions) {
+        setVersions(versionsPayload.versions);
+        setCurrentVersion(versionsPayload.currentVersion ?? payload.currentVersion ?? currentVersion);
+      }
+    }
+
+    setSaving(false);
+    router.refresh();
+  };
+
+  const handleViewVersion = async (versionId: string) => {
+    if (!templateId) {
+      return;
+    }
+
+    const response = await fetch(`/api/dashboard/templates/${templateId}/versions/${versionId}`, { cache: 'no-store' });
+    const payload = (await response.json().catch(() => null)) as {
+      error?: string;
+      content?: string;
+    } | null;
+
+    if (!response.ok || !payload?.content) {
+      setError(payload?.error ?? 'Unable to load template version.');
+      return;
+    }
+
+    setSelectedVersionId(versionId);
+    setSelectedVersionContent(payload.content);
+  };
+
+  const handleRestoreVersion = async (versionId: string) => {
+    if (!templateId) {
+      return;
+    }
+
+    setRestoringVersionId(versionId);
+
+    const response = await fetch(`/api/dashboard/templates/${templateId}/versions/${versionId}`, { method: 'POST' });
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+
+    if (!response.ok) {
+      setError(payload?.error ?? 'Unable to restore template version.');
+      setRestoringVersionId(null);
+      return;
+    }
+
+    const [templateResponse, versionsResponse] = await Promise.all([
+      fetch(`/api/dashboard/templates/${templateId}`, { cache: 'no-store' }),
+      fetch(`/api/dashboard/templates/${templateId}/versions`, { cache: 'no-store' })
+    ]);
+    const templatePayload = (await templateResponse.json().catch(() => null)) as {
+      error?: string;
+      name?: string;
+      description?: string | null;
+      content?: string;
+      currentVersion?: number;
+    } | null;
+    const versionsPayload = (await versionsResponse.json().catch(() => null)) as {
+      currentVersion?: number;
+      versions?: TemplateVersionListItem[];
+    } | null;
+
+    if (templateResponse.ok && templatePayload?.name && templatePayload.content) {
+      setName(templatePayload.name);
+      setDescription(templatePayload.description ?? '');
+      setContent(templatePayload.content);
+      setCurrentVersion(templatePayload.currentVersion ?? 1);
+      setSelectedVersionId(null);
+      setSelectedVersionContent(null);
+    }
+
+    if (versionsResponse.ok && versionsPayload?.versions) {
+      setVersions(versionsPayload.versions);
+      setCurrentVersion(versionsPayload.currentVersion ?? templatePayload?.currentVersion ?? 1);
+    }
+
+    setRestoringVersionId(null);
     router.refresh();
   };
 
@@ -277,6 +493,119 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                 </>
               )}
             </div>
+            {templateId ? (
+              <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
+                <button
+                  className="flex w-full items-center justify-between text-left"
+                  onClick={() => setShowVersionHistory((current) => !current)}
+                  type="button"
+                >
+                  <h2 className="text-lg font-semibold text-white">Version History</h2>
+                  <span className="text-sm text-slate-400">
+                    {showVersionHistory ? '▾' : '▸'} v{currentVersion}
+                  </span>
+                </button>
+
+                {showVersionHistory ? (
+                  <div className="mt-4 space-y-2">
+                    {versionsLoading ? (
+                      <p className="text-sm text-slate-400">Loading versions...</p>
+                    ) : versions.length === 0 ? (
+                      <p className="text-sm text-slate-400">No version history available.</p>
+                    ) : (
+                      <div className="max-h-72 space-y-2 overflow-y-auto">
+                        {versions.map((version) => (
+                          <div
+                            key={version.id}
+                            className={`rounded-lg border p-3 text-sm ${
+                              version.version === currentVersion
+                                ? 'border-blue-500/40 bg-blue-500/10'
+                                : 'border-slate-700 bg-slate-900/60'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-4">
+                              <div>
+                                <span className="font-medium text-white">v{version.version}</span>
+                                {version.version === currentVersion ? (
+                                  <span className="ml-2 text-xs text-blue-300">(current)</span>
+                                ) : null}
+                              </div>
+                              <span className="text-xs text-slate-400">{new Date(version.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            <p className="mt-1 truncate text-xs text-slate-400">{version.name}</p>
+                            {version.version !== currentVersion ? (
+                              <div className="mt-2 flex gap-2">
+                                <button
+                                  className="rounded bg-slate-700 px-2 py-1 text-xs text-slate-200 hover:bg-slate-600"
+                                  onClick={() => void handleViewVersion(version.id)}
+                                  type="button"
+                                >
+                                  View diff
+                                </button>
+                                <button
+                                  className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-500 disabled:opacity-60"
+                                  disabled={restoringVersionId !== null}
+                                  onClick={() => void handleRestoreVersion(version.id)}
+                                  type="button"
+                                >
+                                  {restoringVersionId === version.id ? 'Restoring...' : 'Restore'}
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {selectedVersionContent !== null ? (
+                      <div className="mt-4 rounded-lg border border-slate-600 bg-slate-900 p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-medium text-white">Version {selectedVersion?.version} diff</p>
+                            <p className="mt-1 text-xs text-slate-400">Comparing the selected snapshot against the current editor state.</p>
+                          </div>
+                          <button
+                            className="text-xs text-slate-400 hover:text-white"
+                            onClick={() => {
+                              setSelectedVersionId(null);
+                              setSelectedVersionContent(null);
+                            }}
+                            type="button"
+                          >
+                            Close
+                          </button>
+                        </div>
+                        <div className="mt-3 max-h-60 overflow-auto rounded bg-slate-950 p-3 text-xs">
+                          {selectedVersionDiff.length === 0 ? (
+                            <p className="text-slate-300">No differences.</p>
+                          ) : (
+                            <div className="space-y-1 font-mono">
+                              {selectedVersionDiff.map((line, index) => (
+                                <div
+                                  key={`${line.kind}-${index}-${line.value}`}
+                                  className={
+                                    line.kind === 'added'
+                                      ? 'bg-emerald-500/10 text-emerald-300'
+                                      : line.kind === 'removed'
+                                        ? 'bg-rose-500/10 text-rose-300'
+                                        : 'text-slate-400'
+                                  }
+                                >
+                                  <span className="mr-2 inline-block w-4 text-center">
+                                    {line.kind === 'added' ? '+' : line.kind === 'removed' ? '-' : ' '}
+                                  </span>
+                                  <span className="whitespace-pre-wrap break-words">{line.value || ' '}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </form>
       ) : null}

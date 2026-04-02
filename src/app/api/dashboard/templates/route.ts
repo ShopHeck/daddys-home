@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createInitialVersion } from '@/lib/template-versions';
 
 export const runtime = 'nodejs';
 
@@ -19,6 +20,7 @@ export async function GET() {
       id: true,
       name: true,
       description: true,
+      currentVersion: true,
       createdAt: true,
       updatedAt: true
     },
@@ -56,9 +58,17 @@ export async function POST(request: Request) {
       id: true,
       name: true,
       description: true,
+      currentVersion: true,
       createdAt: true,
       updatedAt: true
     }
+  });
+
+  await createInitialVersion({
+    templateId: template.id,
+    name: body.name.trim(),
+    description: body.description?.trim() || null,
+    content: body.content
   });
 
   return NextResponse.json(template, { status: 201 });

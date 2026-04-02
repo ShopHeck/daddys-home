@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createTemplateVersion } from '@/lib/template-versions';
 
 export const runtime = 'nodejs';
 
@@ -17,6 +18,15 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
     where: {
       id: params.id,
       userId: session.user.id
+    },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      content: true,
+      currentVersion: true,
+      createdAt: true,
+      updatedAt: true
     }
   });
 
@@ -67,13 +77,24 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       id: true,
       name: true,
       description: true,
+      currentVersion: true,
       createdAt: true,
       updatedAt: true,
       content: true
     }
   });
 
-  return NextResponse.json(template);
+  const version = await createTemplateVersion({
+    templateId: existing.id,
+    name: body.name.trim(),
+    description: body.description?.trim() || null,
+    content: body.content
+  });
+
+  return NextResponse.json({
+    ...template,
+    currentVersion: version.version
+  });
 }
 
 export async function DELETE(_: Request, { params }: { params: { id: string } }) {

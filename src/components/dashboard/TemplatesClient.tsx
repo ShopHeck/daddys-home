@@ -9,6 +9,7 @@ type TemplateItem = {
   id: string;
   name: string;
   description: string | null;
+  currentVersion: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -102,6 +103,7 @@ export function TemplatesClient() {
               <thead className="bg-slate-900/60 text-slate-300">
                 <tr>
                   <th className="px-6 py-4 font-medium">Name</th>
+                  <th className="px-6 py-4 font-medium">Version</th>
                   <th className="px-6 py-4 font-medium">Description</th>
                   <th className="px-6 py-4 font-medium">Created</th>
                   <th className="px-6 py-4 font-medium">Updated</th>
@@ -114,6 +116,7 @@ export function TemplatesClient() {
                     <td className="px-6 py-4">
                       <p className="font-medium text-white">{template.name}</p>
                     </td>
+                    <td className="px-6 py-4 text-slate-400">v{template.currentVersion}</td>
                     <td className="px-6 py-4 text-slate-300">{template.description || '—'}</td>
                     <td className="px-6 py-4 text-slate-400">{new Date(template.createdAt).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-slate-400">{new Date(template.updatedAt).toLocaleDateString()}</td>
