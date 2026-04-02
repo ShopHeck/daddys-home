@@ -30,6 +30,7 @@ model User {
   apiKeys                ApiKey[]
   templates              Template[]
   usageRecords           UsageRecord[]
+  usageAlerts            UsageAlert[]
   passwordResetTokens    PasswordResetToken[]
   tier                   Tier                 @default(FREE)
   stripeCustomerId       String?              @unique
@@ -71,6 +72,17 @@ model UsageRecord {
   template   Template?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
   status     RenderStatus @default(SUCCESS)
   createdAt  DateTime     @default(now())
+}
+
+model UsageAlert {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  threshold Int
+  period    String
+  sentAt    DateTime @default(now())
+
+  @@unique([userId, threshold, period])
 }
 
 model Account {

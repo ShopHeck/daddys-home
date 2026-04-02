@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+import { sendEmail } from '@/lib/email';
+import { welcomeEmail } from '@/lib/email-templates';
 import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
@@ -49,6 +51,20 @@ export async function POST(request: Request) {
       name: true,
       email: true
     }
+  });
+
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+
+  sendEmail({
+    to: email,
+    subject: 'Welcome to DocForge!',
+    html: welcomeEmail({
+      name,
+      dashboardUrl: `${baseUrl}/dashboard`,
+      docsUrl: `${baseUrl}/docs`
+    })
+  }).catch((error) => {
+    console.error('Welcome email failed:', error);
   });
 
   return NextResponse.json({ success: true, user }, { status: 201 });

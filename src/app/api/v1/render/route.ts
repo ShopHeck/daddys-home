@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 import { getAuthenticatedUserId } from '@/lib/api-key';
 import { prisma } from '@/lib/prisma';
 import { renderPdfFromTemplate } from '@/lib/renderer';
-import { recordUsage, assertUsageWithinLimit } from '@/lib/usage';
+import { checkAndSendUsageAlerts } from '@/lib/usage-alerts';
+import { getUsageSummary, recordUsage, assertUsageWithinLimit } from '@/lib/usage';
 import type { RenderRequestBody } from '@/types';
 
 export const runtime = 'nodejs';
@@ -60,6 +61,33 @@ export async function POST(request: Request) {
       templateId: template.id,
       status: 'SUCCESS'
     });
+
+    void (async () => {
+      try {
+        const [summary, user] = await Promise.all([
+          getUsageSummary(userId),
+          prisma.user.findUnique({
+            where: { id: userId },
+            select: { email: true, name: true }
+          })
+        ]);
+
+        if (!user) {
+          return;
+        }
+
+        await checkAndSendUsageAlerts({
+          userId,
+          used: summary.used,
+          limit: summary.limit,
+          tier: summary.tier,
+          userEmail: user.email,
+          userName: user.name
+        });
+      } catch (error) {
+        console.error('Usage alert check failed:', error);
+      }
+    })();
 
     return new NextResponse(pdf, {
       status: 200,
