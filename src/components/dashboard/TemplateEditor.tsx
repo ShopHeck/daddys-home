@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { CodeEditor } from '@/components/dashboard/CodeEditor';
+
 type TemplateEditorProps = {
   templateId?: string;
 };
@@ -29,6 +31,8 @@ const defaultSample = `{
   "total": "$2,550.00"
 }`;
 
+const tabButtonClassName = 'rounded-lg px-3 py-1.5 text-sm font-medium transition';
+
 export function TemplateEditor({ templateId }: TemplateEditorProps) {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -36,10 +40,14 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
   const [content, setContent] = useState(defaultContent);
   const [sampleData, setSampleData] = useState(defaultSample);
   const [previewHtml, setPreviewHtml] = useState('');
+  const [previewMode, setPreviewMode] = useState<'html' | 'pdf'>('html');
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(Boolean(templateId));
   const [saving, setSaving] = useState(false);
+  const [rendering, setRendering] = useState(false);
   const [error, setError] = useState('');
   const [previewError, setPreviewError] = useState('');
+  const [renderError, setRenderError] = useState('');
 
   useEffect(() => {
     if (!templateId) {
@@ -70,14 +78,59 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
     void loadTemplate();
   }, [templateId]);
 
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
+
   const handlePreview = () => {
     try {
       const data = JSON.parse(sampleData) as Record<string, unknown>;
       const compiled = Handlebars.compile(content);
       setPreviewHtml(compiled(data));
       setPreviewError('');
+      setPreviewMode('html');
     } catch (err) {
       setPreviewError(err instanceof Error ? err.message : 'Preview failed.');
+      setPreviewMode('html');
+    }
+  };
+
+  const handleTestRender = async () => {
+    setRendering(true);
+    setRenderError('');
+    setPreviewMode('pdf');
+    setPdfUrl(null);
+
+    try {
+      const parsed = JSON.parse(sampleData);
+
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('Sample data must be a JSON object.');
+      }
+
+      const response = await fetch('/api/dashboard/templates/test-render', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, data: parsed })
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        setRenderError(payload?.error ?? 'Render failed');
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+    } catch (err) {
+      setRenderError(err instanceof Error ? err.message : 'Render failed');
+    } finally {
+      setRendering(false);
     }
   };
 
@@ -145,20 +198,20 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-200" htmlFor="template-content">
-                Content
-              </label>
-              <textarea
-                className="min-h-[460px] w-full rounded-lg border border-slate-600 bg-slate-950 p-4 font-mono text-sm text-slate-100 focus:ring-2 focus:ring-blue-500"
-                id="template-content"
-                onChange={(event) => setContent(event.target.value)}
-                spellCheck={false}
-                value={content}
-              />
+              <p className="mb-2 block text-sm font-medium text-slate-200">Content</p>
+              <CodeEditor className="min-h-[460px]" language="html" onChange={setContent} value={content} />
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <button className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" onClick={handlePreview} type="button">
-                Preview
+                Preview HTML
+              </button>
+              <button
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={rendering}
+                onClick={handleTestRender}
+                type="button"
+              >
+                {rendering ? 'Rendering PDF...' : 'Test Render PDF'}
               </button>
               <button
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
@@ -173,25 +226,56 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
           <div className="space-y-6">
             <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
               <h2 className="text-lg font-semibold text-white">Preview data</h2>
-              <p className="mt-2 text-sm text-slate-400">Edit the sample JSON used in the preview iframe.</p>
-              <textarea
-                className="mt-4 min-h-52 w-full rounded-lg border border-slate-600 bg-slate-950 p-4 font-mono text-sm text-slate-100 focus:ring-2 focus:ring-blue-500"
-                onChange={(event) => setSampleData(event.target.value)}
-                spellCheck={false}
-                value={sampleData}
-              />
+              <p className="mt-2 text-sm text-slate-400">Edit the sample JSON used in the preview iframe and PDF test render.</p>
+              <CodeEditor className="mt-4 min-h-52" language="json" onChange={setSampleData} value={sampleData} />
             </div>
             <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-              <h2 className="text-lg font-semibold text-white">Rendered preview</h2>
-              {previewError ? <p className="mt-3 text-sm text-rose-400">{previewError}</p> : null}
-              <div className="mt-4 overflow-hidden rounded-lg border border-slate-700 bg-white">
-                <iframe
-                  className="h-[420px] w-full"
-                  sandbox="allow-same-origin"
-                  srcDoc={previewHtml || '<html><body style="font-family: Arial; padding: 24px; color: #64748b;">Click preview to render this template.</body></html>'}
-                  title="Template preview"
-                />
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-lg font-semibold text-white">Preview</h2>
+                <div className="flex gap-2">
+                  <button
+                    className={`${tabButtonClassName} ${previewMode === 'html' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                    onClick={() => setPreviewMode('html')}
+                    type="button"
+                  >
+                    HTML
+                  </button>
+                  <button
+                    className={`${tabButtonClassName} ${previewMode === 'pdf' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                    onClick={() => setPreviewMode('pdf')}
+                    type="button"
+                  >
+                    PDF
+                  </button>
+                </div>
               </div>
+
+              {previewMode === 'html' ? (
+                <>
+                  {previewError ? <p className="mt-3 text-sm text-rose-400">{previewError}</p> : null}
+                  <div className="mt-4 overflow-hidden rounded-lg border border-slate-700 bg-white">
+                    <iframe
+                      className="h-[420px] w-full"
+                      sandbox="allow-same-origin"
+                      srcDoc={previewHtml || '<html><body style="font-family: Arial; padding: 24px; color: #64748b;">Click Preview HTML to render this template.</body></html>'}
+                      title="Template HTML preview"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {renderError ? <p className="mt-3 text-sm text-rose-400">{renderError}</p> : null}
+                  <div className="mt-4 overflow-hidden rounded-lg border border-slate-700 bg-white">
+                    {pdfUrl ? (
+                      <iframe className="h-[420px] w-full" src={pdfUrl} title="Template PDF preview" />
+                    ) : (
+                      <div className="flex h-[420px] items-center justify-center px-6 text-center text-sm text-slate-500">
+                        {rendering ? 'Rendering PDF preview...' : 'Click Test Render PDF to generate an inline server-rendered PDF preview.'}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </form>
