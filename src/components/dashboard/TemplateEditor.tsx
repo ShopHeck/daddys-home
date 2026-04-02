@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import { CodeEditor } from '@/components/dashboard/CodeEditor';
+import { extractVariables, mergeSchemas, type TemplateVariable, type VariableSchema } from '@/lib/template-variables-client';
 
 type TemplateEditorProps = {
   templateId?: string;
@@ -43,6 +44,16 @@ type TemplateVersionListItem = {
 type DiffLine = {
   kind: 'added' | 'removed' | 'unchanged';
   value: string;
+};
+
+type TemplatePayload = {
+  error?: string;
+  id?: string;
+  name?: string;
+  description?: string | null;
+  content?: string;
+  variableSchema?: VariableSchema | null;
+  currentVersion?: number;
 };
 
 function getVersionDiff(previousContent: string, currentContent: string) {
@@ -96,12 +107,74 @@ function getVersionDiff(previousContent: string, currentContent: string) {
   return diff;
 }
 
+function setNestedValue(target: Record<string, unknown>, path: string[], value: unknown) {
+  if (path.length === 0) {
+    return;
+  }
+
+  let current = target;
+
+  for (let index = 0; index < path.length - 1; index += 1) {
+    const segment = path[index];
+    const existing = current[segment];
+
+    if (!existing || typeof existing !== 'object' || Array.isArray(existing)) {
+      current[segment] = {};
+    }
+
+    current = current[segment] as Record<string, unknown>;
+  }
+
+  current[path[path.length - 1]] = value;
+}
+
+function getSampleValue(variable: TemplateVariable): unknown {
+  switch (variable.type) {
+    case 'number':
+      return 0;
+    case 'boolean':
+      return true;
+    case 'array': {
+      if (!variable.children?.length) {
+        return ['Example item'];
+      }
+
+      const item: Record<string, unknown> = {};
+
+      variable.children.forEach((child) => {
+        setNestedValue(item, child.path, getSampleValue(child));
+      });
+
+      return [item];
+    }
+    case 'object':
+      return {};
+    case 'string':
+    case 'any':
+    default:
+      return `Example ${variable.path[variable.path.length - 1] ?? variable.name}`;
+  }
+}
+
+function buildSampleDataFromSchema(schema: VariableSchema) {
+  const sample: Record<string, unknown> = {};
+
+  schema.variables.forEach((variable) => {
+    setNestedValue(sample, variable.path, getSampleValue(variable));
+  });
+
+  return sample;
+}
+
 export function TemplateEditor({ templateId }: TemplateEditorProps) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [content, setContent] = useState(defaultContent);
   const [sampleData, setSampleData] = useState(defaultSample);
+  const [variableSchema, setVariableSchema] = useState<VariableSchema | null>(null);
+  const [schemaModified, setSchemaModified] = useState(false);
+  const [savingSchema, setSavingSchema] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewMode, setPreviewMode] = useState<'html' | 'pdf'>('html');
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -133,19 +206,25 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
   }, [content, selectedVersionContent]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const extracted = extractVariables(content);
+        setVariableSchema((previous) => (previous ? mergeSchemas(extracted, previous) : extracted));
+      } catch {
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [content]);
+
+  useEffect(() => {
     if (!templateId) {
       return;
     }
 
     const loadTemplate = async () => {
       const response = await fetch(`/api/dashboard/templates/${templateId}`, { cache: 'no-store' });
-      const payload = (await response.json().catch(() => null)) as {
-        error?: string;
-        name?: string;
-        description?: string | null;
-        content?: string;
-        currentVersion?: number;
-      } | null;
+      const payload = (await response.json().catch(() => null)) as TemplatePayload | null;
 
       if (!response.ok || !payload?.name || !payload.content) {
         setError(payload?.error ?? 'Unable to load template.');
@@ -156,6 +235,8 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       setName(payload.name);
       setDescription(payload.description ?? '');
       setContent(payload.content);
+      setVariableSchema(payload.variableSchema ?? null);
+      setSchemaModified(false);
       setCurrentVersion(payload.currentVersion ?? 1);
       setLoading(false);
     };
@@ -255,16 +336,9 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
     const response = await fetch(templateId ? `/api/dashboard/templates/${templateId}` : '/api/dashboard/templates', {
       method: templateId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description, content })
+      body: JSON.stringify({ name, description, content, variableSchema })
     });
-    const payload = (await response.json().catch(() => null)) as {
-      error?: string;
-      id?: string;
-      name?: string;
-      description?: string | null;
-      content?: string;
-      currentVersion?: number;
-    } | null;
+    const payload = (await response.json().catch(() => null)) as TemplatePayload | null;
 
     if (!response.ok) {
       setError(payload?.error ?? 'Unable to save template.');
@@ -282,6 +356,8 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       setName(payload.name ?? name);
       setDescription(payload.description ?? '');
       setContent(payload.content ?? content);
+      setVariableSchema(payload.variableSchema ?? variableSchema);
+      setSchemaModified(false);
       setCurrentVersion(payload.currentVersion ?? currentVersion);
       setSelectedVersionId(null);
       setSelectedVersionContent(null);
@@ -342,13 +418,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       fetch(`/api/dashboard/templates/${templateId}`, { cache: 'no-store' }),
       fetch(`/api/dashboard/templates/${templateId}/versions`, { cache: 'no-store' })
     ]);
-    const templatePayload = (await templateResponse.json().catch(() => null)) as {
-      error?: string;
-      name?: string;
-      description?: string | null;
-      content?: string;
-      currentVersion?: number;
-    } | null;
+    const templatePayload = (await templateResponse.json().catch(() => null)) as TemplatePayload | null;
     const versionsPayload = (await versionsResponse.json().catch(() => null)) as {
       currentVersion?: number;
       versions?: TemplateVersionListItem[];
@@ -358,6 +428,8 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       setName(templatePayload.name);
       setDescription(templatePayload.description ?? '');
       setContent(templatePayload.content);
+      setVariableSchema(templatePayload.variableSchema ?? null);
+      setSchemaModified(false);
       setCurrentVersion(templatePayload.currentVersion ?? 1);
       setSelectedVersionId(null);
       setSelectedVersionContent(null);
@@ -370,6 +442,54 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
 
     setRestoringVersionId(null);
     router.refresh();
+  };
+
+  const updateVariable = (variableName: string, updater: (variable: TemplateVariable) => TemplateVariable) => {
+    setVariableSchema((previous) => {
+      if (!previous) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        variables: previous.variables.map((variable) => (variable.name === variableName ? updater(variable) : variable))
+      };
+    });
+    setSchemaModified(true);
+  };
+
+  const handleSaveVariableSchema = async () => {
+    if (!templateId || !variableSchema) {
+      return;
+    }
+
+    setSavingSchema(true);
+    setError('');
+
+    const response = await fetch(`/api/dashboard/templates/${templateId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ variableSchema })
+    });
+    const payload = (await response.json().catch(() => null)) as { error?: string; variableSchema?: VariableSchema } | null;
+
+    if (!response.ok || !payload?.variableSchema) {
+      setError(payload?.error ?? 'Unable to save variable descriptions.');
+      setSavingSchema(false);
+      return;
+    }
+
+    setVariableSchema(payload.variableSchema);
+    setSchemaModified(false);
+    setSavingSchema(false);
+  };
+
+  const handleGenerateSampleData = () => {
+    if (!variableSchema) {
+      return;
+    }
+
+    setSampleData(JSON.stringify(buildSampleDataFromSchema(variableSchema), null, 2));
   };
 
   return (
@@ -441,9 +561,120 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
 
           <div className="space-y-6">
             <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-              <h2 className="text-lg font-semibold text-white">Preview data</h2>
-              <p className="mt-2 text-sm text-slate-400">Edit the sample JSON used in the preview iframe and PDF test render.</p>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Preview data</h2>
+                  <p className="mt-2 text-sm text-slate-400">Edit the sample JSON used in the preview iframe and PDF test render.</p>
+                </div>
+                {variableSchema && variableSchema.variables.length > 0 ? (
+                  <button
+                    className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-600"
+                    onClick={handleGenerateSampleData}
+                    type="button"
+                  >
+                    Generate from variables
+                  </button>
+                ) : null}
+              </div>
               <CodeEditor className="mt-4 min-h-52" language="json" onChange={setSampleData} value={sampleData} />
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-white">Variables</h2>
+                {variableSchema ? <span className="text-xs text-slate-400">{variableSchema.variables.length} detected</span> : null}
+              </div>
+              <p className="mt-2 text-sm text-slate-400">Auto-detected from your template. Edit descriptions and required flags.</p>
+
+              {variableSchema && variableSchema.variables.length > 0 ? (
+                <div className="mt-4 max-h-80 space-y-3 overflow-y-auto">
+                  {variableSchema.variables.map((variable) => (
+                    <div key={variable.name} className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <code className="text-sm font-medium text-blue-300">{variable.name}</code>
+                          <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                            {variable.type}
+                          </span>
+                        </div>
+                        <label className="flex items-center gap-1.5 text-xs text-slate-400">
+                          <input
+                            checked={variable.required}
+                            className="rounded border-slate-600"
+                            onChange={(event) => updateVariable(variable.name, (current) => ({ ...current, required: event.target.checked }))}
+                            type="checkbox"
+                          />
+                          Required
+                        </label>
+                      </div>
+                      <input
+                        className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500"
+                        onChange={(event) => updateVariable(variable.name, (current) => ({ ...current, description: event.target.value }))}
+                        placeholder="Add a description..."
+                        type="text"
+                        value={variable.description}
+                      />
+                      {variable.type === 'array' && variable.children && variable.children.length > 0 ? (
+                        <div className="ml-3 mt-3 space-y-2 border-l border-slate-700 pl-3">
+                          <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Item fields</span>
+                          {variable.children.map((child) => (
+                            <div key={child.name} className="rounded border border-slate-700 bg-slate-950/50 p-2">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                  <code className="text-xs text-slate-300">{child.name}</code>
+                                  <span className="rounded bg-slate-700 px-1 py-0.5 text-[10px] text-slate-500">{child.type}</span>
+                                </div>
+                                <label className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                                  <input
+                                    checked={child.required}
+                                    className="rounded border-slate-600"
+                                    onChange={(event) =>
+                                      updateVariable(variable.name, (current) => ({
+                                        ...current,
+                                        children: current.children?.map((item) =>
+                                          item.name === child.name ? { ...item, required: event.target.checked } : item
+                                        )
+                                      }))
+                                    }
+                                    type="checkbox"
+                                  />
+                                  Required
+                                </label>
+                              </div>
+                              <input
+                                className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500"
+                                onChange={(event) =>
+                                  updateVariable(variable.name, (current) => ({
+                                    ...current,
+                                    children: current.children?.map((item) =>
+                                      item.name === child.name ? { ...item, description: event.target.value } : item
+                                    )
+                                  }))
+                                }
+                                placeholder="Add a field description..."
+                                type="text"
+                                value={child.description}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-4 text-sm text-slate-500">{content.trim() ? 'No variables detected.' : 'Start typing to detect variables.'}</p>
+              )}
+
+              {schemaModified && templateId ? (
+                <button
+                  className="mt-3 w-full rounded-lg bg-slate-700 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={savingSchema}
+                  onClick={() => void handleSaveVariableSchema()}
+                  type="button"
+                >
+                  {savingSchema ? 'Saving variable descriptions...' : 'Save variable descriptions'}
+                </button>
+              ) : null}
             </div>
             <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
               <div className="flex items-center justify-between gap-4">
@@ -526,9 +757,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                             <div className="flex items-center justify-between gap-4">
                               <div>
                                 <span className="font-medium text-white">v{version.version}</span>
-                                {version.version === currentVersion ? (
-                                  <span className="ml-2 text-xs text-blue-300">(current)</span>
-                                ) : null}
+                                {version.version === currentVersion ? <span className="ml-2 text-xs text-blue-300">(current)</span> : null}
                               </div>
                               <span className="text-xs text-slate-400">{new Date(version.createdAt).toLocaleDateString()}</span>
                             </div>

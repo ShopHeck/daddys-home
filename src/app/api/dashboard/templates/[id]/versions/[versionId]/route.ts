@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import type { VariableSchema } from '@/lib/template-variables';
 import { createTemplateVersion } from '@/lib/template-versions';
 
 export const runtime = 'nodejs';
@@ -63,7 +64,7 @@ export async function POST(_: Request, { params }: { params: { id: string; versi
 
   const version = await prisma.templateVersion.findFirst({
     where: { id: params.versionId, templateId: params.id },
-    select: { name: true, description: true, content: true }
+    select: { name: true, description: true, content: true, variableSchema: true }
   });
 
   if (!version) {
@@ -75,7 +76,8 @@ export async function POST(_: Request, { params }: { params: { id: string; versi
     data: {
       name: version.name,
       description: version.description,
-      content: version.content
+      content: version.content,
+      variableSchema: version.variableSchema ?? undefined
     }
   });
 
@@ -83,7 +85,8 @@ export async function POST(_: Request, { params }: { params: { id: string; versi
     templateId: params.id,
     name: version.name,
     description: version.description,
-    content: version.content
+    content: version.content,
+    variableSchema: (version.variableSchema as VariableSchema | null) ?? null
   });
 
   return NextResponse.json({

@@ -18,6 +18,7 @@ export type RenderRequestBody = {
   templateId: string;
   data: Record<string, unknown>;
   options?: RenderOptions;
+  validateSchema?: boolean;
 };
 
 declare module 'next-auth' {
