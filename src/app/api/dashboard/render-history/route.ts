@@ -81,6 +81,9 @@ export async function GET(request: Request) {
         template: {
           select: { id: true, name: true }
         },
+        templateVersion: {
+          select: { version: true }
+        },
         apiKey: {
           select: { id: true, name: true, keyPrefix: true }
         }
@@ -105,6 +108,7 @@ export async function GET(request: Request) {
       createdAt: record.createdAt.toISOString(),
       templateName: record.template?.name ?? null,
       templateId: record.template?.id ?? null,
+      templateVersion: record.templateVersion?.version ?? null,
       apiKeyName: record.apiKey?.name ?? null,
       apiKeyPrefix: record.apiKey?.keyPrefix ?? null
     })),

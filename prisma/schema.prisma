@@ -54,30 +54,51 @@ model ApiKey {
 }
 
 model Template {
-  id          String        @id @default(cuid())
-  name        String
-  description String?
-  content     String        @db.Text
-  userId      String
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  renders     UsageRecord[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id             String            @id @default(cuid())
+  name           String
+  description    String?
+  content        String            @db.Text
+  variableSchema Json?
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  renders        UsageRecord[]
+  versions       TemplateVersion[]
+  currentVersion Int               @default(1)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+model TemplateVersion {
+  id             String        @id @default(cuid())
+  templateId     String
+  template       Template      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  version        Int
+  name           String
+  description    String?
+  content        String        @db.Text
+  variableSchema Json?
+  createdAt      DateTime      @default(now())
+  renders        UsageRecord[]
+
+  @@unique([templateId, version])
+  @@index([templateId, createdAt])
 }
 
 model UsageRecord {
-  id            String       @id @default(cuid())
-  userId        String
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  templateId    String?
-  template      Template?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  status        RenderStatus @default(SUCCESS)
-  durationMs    Int?
-  fileSizeBytes Int?
-  errorMessage  String?      @db.Text
-  apiKeyId      String?
-  apiKey        ApiKey?      @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
-  createdAt     DateTime     @default(now())
+  id                String           @id @default(cuid())
+  userId            String
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateId        String?
+  template          Template?        @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateVersionId String?
+  templateVersion   TemplateVersion? @relation(fields: [templateVersionId], references: [id], onDelete: SetNull)
+  status            RenderStatus     @default(SUCCESS)
+  durationMs        Int?
+  fileSizeBytes     Int?
+  errorMessage      String?          @db.Text
+  apiKeyId          String?
+  apiKey            ApiKey?          @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  createdAt         DateTime         @default(now())
 
   @@index([userId, createdAt])
 }

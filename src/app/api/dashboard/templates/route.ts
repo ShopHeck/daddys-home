@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { extractVariables, mergeSchemas, type VariableSchema } from '@/lib/template-variables';
+import { createInitialVersion } from '@/lib/template-versions';
 
 export const runtime = 'nodejs';
 
@@ -19,6 +21,7 @@ export async function GET() {
       id: true,
       name: true,
       description: true,
+      currentVersion: true,
       createdAt: true,
       updatedAt: true
     },
@@ -39,26 +42,47 @@ export async function POST(request: Request) {
     name?: string;
     description?: string;
     content?: string;
+    variableSchema?: VariableSchema | null;
   } | null;
 
   if (!body?.name?.trim() || !body.content?.trim()) {
     return NextResponse.json({ error: 'Name and content are required.' }, { status: 400 });
   }
 
-  const template = await prisma.template.create({
-    data: {
-      userId: session.user.id,
-      name: body.name.trim(),
-      description: body.description?.trim() || null,
-      content: body.content
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      createdAt: true,
-      updatedAt: true
-    }
+  const schema = mergeSchemas(extractVariables(body.content), body.variableSchema ?? null);
+
+  const template = await prisma.$transaction(async (tx) => {
+    const createdTemplate = await tx.template.create({
+      data: {
+        userId: session.user.id,
+        name: body.name!.trim(),
+        description: body.description?.trim() || null,
+        content: body.content!,
+        variableSchema: schema as any
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        variableSchema: true,
+        currentVersion: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    await createInitialVersion(
+      {
+        templateId: createdTemplate.id,
+        name: body.name!.trim(),
+        description: body.description?.trim() || null,
+        content: body.content!,
+        variableSchema: schema
+      },
+      tx
+    );
+
+    return createdTemplate;
   });
 
   return NextResponse.json(template, { status: 201 });

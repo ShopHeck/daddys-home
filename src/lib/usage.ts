@@ -77,6 +77,7 @@ export async function assertUsageWithinLimit(userId: string) {
 export async function recordUsage(params: {
   userId: string;
   templateId?: string;
+  templateVersionId?: string;
   status?: 'SUCCESS' | 'FAILED';
   durationMs?: number;
   fileSizeBytes?: number;
@@ -87,6 +88,7 @@ export async function recordUsage(params: {
     data: {
       userId: params.userId,
       templateId: params.templateId,
+      templateVersionId: params.templateVersionId,
       status: params.status ?? 'SUCCESS',
       durationMs: params.durationMs,
       fileSizeBytes: params.fileSizeBytes,

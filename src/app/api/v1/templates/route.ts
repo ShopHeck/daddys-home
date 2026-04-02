@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 
 import { getAuthenticatedUserId } from '@/lib/api-key';
 import { prisma } from '@/lib/prisma';
+import { extractVariables } from '@/lib/template-variables';
+import { createInitialVersion } from '@/lib/template-versions';
 
 export const runtime = 'nodejs';
 
@@ -18,6 +20,8 @@ export async function GET(request: Request) {
       id: true,
       name: true,
       description: true,
+      variableSchema: true,
+      currentVersion: true,
       createdAt: true,
       updatedAt: true
     },
@@ -40,19 +44,39 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Name and content are required' }, { status: 400 });
   }
 
-  const template = await prisma.template.create({
-    data: {
-      userId,
-      name: body.name.trim(),
-      description: body.description?.trim() || null,
-      content: body.content
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      createdAt: true
-    }
+  const schema = extractVariables(body.content);
+
+  const template = await prisma.$transaction(async (tx) => {
+    const createdTemplate = await tx.template.create({
+      data: {
+        userId,
+        name: body.name!.trim(),
+        description: body.description?.trim() || null,
+        content: body.content!,
+        variableSchema: schema as any
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        variableSchema: true,
+        currentVersion: true,
+        createdAt: true
+      }
+    });
+
+    await createInitialVersion(
+      {
+        templateId: createdTemplate.id,
+        name: body.name!.trim(),
+        description: body.description?.trim() || null,
+        content: body.content!,
+        variableSchema: schema
+      },
+      tx
+    );
+
+    return createdTemplate;
   });
 
   return NextResponse.json(template, { status: 201 });
