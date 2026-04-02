@@ -67,6 +67,23 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.tier = user.tier;
+
+        return token;
+      }
+
+      const userId = (token.id as string | undefined) ?? token.sub;
+
+      if (!userId) {
+        return token;
+      }
+
+      const existingUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { tier: true }
+      });
+
+      if (existingUser) {
+        token.tier = existingUser.tier;
       }
 
       return token;

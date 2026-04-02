@@ -18,6 +18,17 @@ const navigation = [
   { href: '/dashboard/templates', label: 'Templates' },
   { href: '/dashboard/api-keys', label: 'API Keys' },
   { href: '/dashboard/usage', label: 'Usage' },
+  {
+    href: '/dashboard/billing',
+    label: 'Billing',
+    icon: (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <rect height="14" rx="2" stroke="currentColor" strokeWidth="1.75" width="20" x="2" y="5" />
+        <path d="M2 10.5h20" stroke="currentColor" strokeWidth="1.75" />
+        <path d="M6 15.5h4" stroke="currentColor" strokeLinecap="round" strokeWidth="1.75" />
+      </svg>
+    )
+  },
   { href: '/docs', label: 'Documentation' }
 ];
 
@@ -57,13 +68,14 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
                 <Link
                   key={item.href}
                   className={[
-                    'flex items-center rounded-lg px-4 py-3 text-sm transition',
+                    'flex items-center gap-3 rounded-lg px-4 py-3 text-sm transition',
                     isActive ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                   ].join(' ')}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
                 >
-                  {item.label}
+                  {item.icon ? <span className="text-current">{item.icon}</span> : null}
+                  <span>{item.label}</span>
                 </Link>
               );
             })}
