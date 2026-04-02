@@ -138,11 +138,18 @@ const tiers = [
   ['Business', '50,000 docs / month', 'Everything in Pro plus custom templates, dedicated support, and SLA']
 ];
 
+const rateLimits = [
+  ['Free', '10 requests / second', '100 requests / 10 second window'],
+  ['Pro', '50 requests / second', '500 requests / 10 second window'],
+  ['Business', '200 requests / second', '2000 requests / 10 second window']
+];
+
 const errors = [
   ['400', 'Invalid body, template data, or malformed payload'],
   ['401', 'Missing or invalid API key'],
   ['402', 'Usage limit exceeded for current billing period'],
   ['404', 'Requested template resource not found'],
+  ['429', 'Rate limit exceeded — check Retry-After header'],
   ['500', 'Unexpected render or server failure']
 ];
 
@@ -170,9 +177,10 @@ export default function DocsPage() {
           <nav className="mt-4 space-y-3 text-sm text-slate-300">
             <a className="block hover:text-white" href="#getting-started">Getting Started</a>
             <a className="block hover:text-white" href="#authentication">Authentication</a>
+            <a className="block hover:text-white" href="#rate-limits">Rate Limits</a>
             <a className="block hover:text-white" href="#endpoints">Endpoints</a>
             <a className="block hover:text-white" href="#template-guide">Template Guide</a>
-            <a className="block hover:text-white" href="#tiers">Rate Limits & Tiers</a>
+            <a className="block hover:text-white" href="#tiers">Plans & Monthly Quotas</a>
             <a className="block hover:text-white" href="#errors">Error Codes</a>
           </nav>
         </div>
@@ -202,6 +210,54 @@ export default function DocsPage() {
             Generate keys from the dashboard after signing up. Keys are only shown in full once, so store them securely in your secrets manager.
           </p>
           <pre className="mt-6 overflow-x-auto rounded-lg bg-slate-950 p-4 font-mono text-sm text-slate-300">X-API-Key: df_live_your_generated_key</pre>
+        </section>
+
+        <section className="rounded-lg border border-slate-700 bg-slate-800 p-6" id="rate-limits">
+          <h2 className="text-2xl font-semibold text-white">Rate Limits</h2>
+          <p className="mt-4 text-sm leading-7 text-slate-300">
+            All <code className="rounded bg-slate-950 px-2 py-1 font-mono text-slate-100">/api/v1/*</code> requests enforce a per-key burst limit over a 10 second window.
+            Unauthenticated traffic is also capped at 30 requests per second per IP address before key validation to reduce brute-force guessing and abuse.
+          </p>
+          <div className="mt-6 overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-700 text-left text-sm">
+              <thead className="text-slate-300">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Tier</th>
+                  <th className="px-4 py-3 font-medium">Requests / second</th>
+                  <th className="px-4 py-3 font-medium">Burst allowance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700 text-slate-300">
+                {rateLimits.map(([name, perSecond, burst]) => (
+                  <tr key={name}>
+                    <td className="px-4 py-3 font-medium text-white">{name}</td>
+                    <td className="px-4 py-3">{perSecond}</td>
+                    <td className="px-4 py-3">{burst}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-6 space-y-4 text-sm text-slate-300">
+            <p>Responses include the following headers so clients can pace requests proactively:</p>
+            <ul className="space-y-2">
+              <li><code className="rounded bg-slate-950 px-2 py-1 font-mono text-slate-100">X-RateLimit-Limit</code> — total requests allowed in the current 10 second window</li>
+              <li><code className="rounded bg-slate-950 px-2 py-1 font-mono text-slate-100">X-RateLimit-Remaining</code> — remaining requests before throttling</li>
+              <li><code className="rounded bg-slate-950 px-2 py-1 font-mono text-slate-100">X-RateLimit-Reset</code> — Unix timestamp when the current window resets</li>
+              <li><code className="rounded bg-slate-950 px-2 py-1 font-mono text-slate-100">Retry-After</code> — included on <code className="rounded bg-slate-950 px-2 py-1 font-mono text-slate-100">429</code> responses with the wait time in seconds</li>
+            </ul>
+          </div>
+          <pre className="mt-6 overflow-x-auto rounded-lg bg-slate-950 p-4 font-mono text-sm text-slate-300">{`HTTP/1.1 429 Too Many Requests
+Content-Type: application/json
+Retry-After: 3
+X-RateLimit-Limit: 500
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1712100000
+
+{
+  "error": "Rate limit exceeded",
+  "retryAfter": 3
+}`}</pre>
         </section>
 
         <section className="space-y-8" id="endpoints">
@@ -260,7 +316,7 @@ export default function DocsPage() {
         </section>
 
         <section className="rounded-lg border border-slate-700 bg-slate-800 p-6" id="tiers">
-          <h2 className="text-2xl font-semibold text-white">Rate Limits & Tiers</h2>
+          <h2 className="text-2xl font-semibold text-white">Plans & Monthly Quotas</h2>
           <div className="mt-6 overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-700 text-left text-sm">
               <thead className="text-slate-300">

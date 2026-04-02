@@ -23,5 +23,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid API key' }, { status: 401 });
   }
 
-  return NextResponse.json({ userId: record.userId });
+  return NextResponse.json({
+    userId: record.userId,
+    tier: record.tier,
+    apiKeyId: record.apiKeyId
+  });
 }
