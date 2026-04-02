@@ -77,7 +77,7 @@ export function extractVariablesFromAst(ast: unknown): VariableSchema {
     const key = fullPath.join('.');
 
     if (!key) {
-      return;
+      return null;
     }
 
     if (fullPath.length > 1) {
@@ -101,27 +101,25 @@ export function extractVariablesFromAst(ast: unknown): VariableSchema {
 
     if (existing) {
       existing.type = combineTypes(existing.type, inferredType);
-      return;
+      return existing;
     }
 
-    variableMap.set(key, {
+    const variable: TemplateVariable = {
       name: key,
       path: fullPath,
       type: inferredType,
       required: true,
       description: ''
-    });
+    };
+
+    variableMap.set(key, variable);
+
+    return variable;
   }
 
-  function registerArrayChild(parentKey: string, childPath: string[], inferredType: VariableType) {
+  function registerArrayChild(parent: TemplateVariable, childPath: string[], inferredType: VariableType) {
     if (childPath.length === 0) {
-      return;
-    }
-
-    const parent = variableMap.get(parentKey);
-
-    if (!parent || parent.type !== 'array') {
-      return;
+      return null;
     }
 
     const childName = childPath.join('.');
@@ -129,60 +127,73 @@ export function extractVariablesFromAst(ast: unknown): VariableSchema {
 
     if (existingChild) {
       existingChild.type = combineTypes(existingChild.type, inferredType);
-      return;
+      return existingChild;
     }
 
-    parent.children = parent.children ?? [];
-    parent.children.push({
+    const child: TemplateVariable = {
       name: childName,
       path: childPath,
       type: inferredType,
       required: true,
       description: ''
-    });
+    };
+
+    parent.children = parent.children ?? [];
+    parent.children.push(child);
+
+    return child;
   }
 
-  function registerVariable(pathExpr: AstPathExpression, context: string[], inferredType: VariableType) {
+  function isRelativeToContext(pathExpr: AstPathExpression, context: TemplateVariable | null, effectiveParts: string[]) {
+    if (!context || pathExpr.data) {
+      return false;
+    }
+
+    if (effectiveParts.length === 0) {
+      return false;
+    }
+
+    const looksRelative = pathExpr.parts?.[0] === 'this' || (pathExpr.depth ?? 0) === 0;
+    const couldBeKnownRoot = variableMap.has(effectiveParts[0]);
+
+    return looksRelative && !couldBeKnownRoot;
+  }
+
+  function registerVariable(pathExpr: AstPathExpression, context: TemplateVariable | null, inferredType: VariableType) {
     if (pathExpr.data) {
-      return;
+      return null;
     }
 
     const parts = [...(pathExpr.parts ?? [])];
 
     if (parts.length === 0) {
-      return;
+      return null;
     }
 
     if (parts.length === 1 && parts[0] === 'this') {
-      return;
+      return null;
     }
 
     const effectiveParts = parts[0] === 'this' ? parts.slice(1) : parts;
 
     if (effectiveParts.length === 0) {
-      return;
+      return null;
     }
 
-    if (context.length > 0) {
-      const looksRelative = parts[0] === 'this' || (pathExpr.depth ?? 0) === 0;
-      const couldBeKnownRoot = variableMap.has(effectiveParts[0]);
-
-      if (looksRelative && !couldBeKnownRoot) {
-        registerArrayChild(context.join('.'), effectiveParts, inferredType);
-        return;
-      }
+    if (isRelativeToContext(pathExpr, context, effectiveParts)) {
+      return registerArrayChild(context!, effectiveParts, inferredType);
     }
 
-    registerTopLevelVariable(effectiveParts, inferredType);
+    return registerTopLevelVariable(effectiveParts, inferredType);
   }
 
-  function walkExpression(expression: AstExpression, context: string[], inferredType: VariableType) {
+  function walkExpression(expression: AstExpression, context: TemplateVariable | null, inferredType: VariableType) {
     if (isPathExpression(expression)) {
       registerVariable(expression, context, inferredType);
     }
   }
 
-  function walkProgramNode(nextProgram: AstProgram | null | undefined, context: string[]) {
+  function walkProgramNode(nextProgram: AstProgram | null | undefined, context: TemplateVariable | null) {
     if (!nextProgram?.body) {
       return;
     }
@@ -192,7 +203,7 @@ export function extractVariablesFromAst(ast: unknown): VariableSchema {
     }
   }
 
-  function walkStatement(statement: AstStatement, context: string[]) {
+  function walkStatement(statement: AstStatement, context: TemplateVariable | null) {
     switch (statement.type) {
       case 'MustacheStatement': {
         const node = statement as AstMustacheStatement;
@@ -221,23 +232,21 @@ export function extractVariablesFromAst(ast: unknown): VariableSchema {
 
         if (helperName === 'each' && params.length > 0 && isPathExpression(params[0])) {
           const param = params[0];
+          const parts = [...(param.parts ?? [])];
+          const effectiveParts = parts[0] === 'this' ? parts.slice(1) : parts;
 
-          if (!param.data) {
-            const parts = [...(param.parts ?? [])];
-            const effectiveParts = parts[0] === 'this' ? parts.slice(1) : parts;
-            const fullPath = context.length > 0 && parts[0] !== 'this' && !variableMap.has(effectiveParts[0])
-              ? context
-              : effectiveParts;
-
-            if (fullPath.length > 0) {
-              registerTopLevelVariable(fullPath, 'array');
-              walkProgramNode(node.program, fullPath);
-            } else {
-              walkProgramNode(node.program, context);
-            }
-          } else {
+          if (param.data || effectiveParts.length === 0) {
             walkProgramNode(node.program, context);
+            walkProgramNode(node.inverse, context);
+            break;
           }
+
+          const nextContext = isRelativeToContext(param, context, effectiveParts)
+            ? registerArrayChild(context!, effectiveParts, 'array')
+            : registerTopLevelVariable(effectiveParts, 'array');
+
+          walkProgramNode(node.program, nextContext);
+          walkProgramNode(node.inverse, context);
         } else if ((helperName === 'if' || helperName === 'unless') && params.length > 0 && isPathExpression(params[0])) {
           registerVariable(params[0], context, 'any');
           walkProgramNode(node.program, context);
@@ -256,7 +265,7 @@ export function extractVariablesFromAst(ast: unknown): VariableSchema {
     }
   }
 
-  walkProgramNode(program, []);
+  walkProgramNode(program, null);
 
   return {
     variables: Array.from(variableMap.values()),
@@ -293,7 +302,20 @@ export function mergeSchemas(extracted: VariableSchema, existing: VariableSchema
           return {
             ...child,
             required: previousChild.required,
-            description: previousChild.description
+            description: previousChild.description,
+            children: child.children?.map((grandchild) => {
+              const previousGrandchild = previousChild.children?.find((item) => item.name === grandchild.name);
+
+              if (!previousGrandchild) {
+                return grandchild;
+              }
+
+              return {
+                ...grandchild,
+                required: previousGrandchild.required,
+                description: previousGrandchild.description
+              };
+            })
           };
         })
       };

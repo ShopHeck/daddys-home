@@ -46,30 +46,37 @@ export async function POST(request: Request) {
 
   const schema = extractVariables(body.content);
 
-  const template = await prisma.template.create({
-    data: {
-      userId,
-      name: body.name.trim(),
-      description: body.description?.trim() || null,
-      content: body.content,
-      variableSchema: schema as any
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      variableSchema: true,
-      currentVersion: true,
-      createdAt: true
-    }
-  });
+  const template = await prisma.$transaction(async (tx) => {
+    const createdTemplate = await tx.template.create({
+      data: {
+        userId,
+        name: body.name!.trim(),
+        description: body.description?.trim() || null,
+        content: body.content!,
+        variableSchema: schema as any
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        variableSchema: true,
+        currentVersion: true,
+        createdAt: true
+      }
+    });
 
-  await createInitialVersion({
-    templateId: template.id,
-    name: body.name.trim(),
-    description: body.description?.trim() || null,
-    content: body.content,
-    variableSchema: schema
+    await createInitialVersion(
+      {
+        templateId: createdTemplate.id,
+        name: body.name!.trim(),
+        description: body.description?.trim() || null,
+        content: body.content!,
+        variableSchema: schema
+      },
+      tx
+    );
+
+    return createdTemplate;
   });
 
   return NextResponse.json(template, { status: 201 });

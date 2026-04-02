@@ -51,31 +51,38 @@ export async function POST(request: Request) {
 
   const schema = mergeSchemas(extractVariables(body.content), body.variableSchema ?? null);
 
-  const template = await prisma.template.create({
-    data: {
-      userId: session.user.id,
-      name: body.name.trim(),
-      description: body.description?.trim() || null,
-      content: body.content,
-      variableSchema: schema as any
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      variableSchema: true,
-      currentVersion: true,
-      createdAt: true,
-      updatedAt: true
-    }
-  });
+  const template = await prisma.$transaction(async (tx) => {
+    const createdTemplate = await tx.template.create({
+      data: {
+        userId: session.user.id,
+        name: body.name!.trim(),
+        description: body.description?.trim() || null,
+        content: body.content!,
+        variableSchema: schema as any
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        variableSchema: true,
+        currentVersion: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
 
-  await createInitialVersion({
-    templateId: template.id,
-    name: body.name.trim(),
-    description: body.description?.trim() || null,
-    content: body.content,
-    variableSchema: schema
+    await createInitialVersion(
+      {
+        templateId: createdTemplate.id,
+        name: body.name!.trim(),
+        description: body.description?.trim() || null,
+        content: body.content!,
+        variableSchema: schema
+      },
+      tx
+    );
+
+    return createdTemplate;
   });
 
   return NextResponse.json(template, { status: 201 });

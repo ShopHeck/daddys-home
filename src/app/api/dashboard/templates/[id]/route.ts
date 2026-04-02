@@ -72,43 +72,52 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: 'Template not found.' }, { status: 404 });
   }
 
-  const extracted = extractVariables(body.content);
+  const name = body.name.trim();
+  const description = body.description?.trim() || null;
+  const content = body.content;
+  const extracted = extractVariables(content);
   const schema = mergeSchemas(extracted, body.variableSchema ?? (existing.variableSchema as VariableSchema | null));
 
-  const template = await prisma.template.update({
-    where: { id: existing.id },
-    data: {
-      name: body.name.trim(),
-      description: body.description?.trim() || null,
-      content: body.content,
-      variableSchema: schema as any
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      content: true,
-      variableSchema: true,
-      currentVersion: true,
-      createdAt: true,
-      updatedAt: true
-    }
+  const payload = await prisma.$transaction(async (tx) => {
+    const template = await tx.template.update({
+      where: { id: existing.id },
+      data: {
+        name,
+        description,
+        content,
+        variableSchema: schema as any
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        content: true,
+        variableSchema: true,
+        currentVersion: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    const version = await createTemplateVersion(
+      {
+        templateId: existing.id,
+        name,
+        description,
+        content,
+        variableSchema: schema
+      },
+      tx
+    );
+
+    return {
+      ...template,
+      currentVersion: version.version
+    };
   });
 
-  const version = await createTemplateVersion({
-    templateId: existing.id,
-    name: body.name.trim(),
-    description: body.description?.trim() || null,
-    content: body.content,
-    variableSchema: schema
-  });
-
-  return NextResponse.json({
-    ...template,
-    currentVersion: version.version
-  });
+  return NextResponse.json(payload);
 }
-
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -132,7 +141,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     };
   } | null;
 
-  if (!body?.variableSchema?.variables) {
+  if (!body?.variableSchema?.variables || !Array.isArray(body.variableSchema.variables)) {
     return NextResponse.json({ error: 'variableSchema.variables is required' }, { status: 400 });
   }
 
