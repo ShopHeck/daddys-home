@@ -13,15 +13,43 @@ DocForge is a premium document generation API SaaS for teams that need to turn s
    cp .env.example .env
    ```
 3. Start PostgreSQL and point `DATABASE_URL` at the database.
-4. Generate the Prisma client and push the schema:
+4. Generate the Prisma client and apply the development migration:
    ```bash
    pnpm prisma:generate
-   pnpm prisma:push
+   pnpm prisma:migrate:dev
    ```
 5. Run the app:
    ```bash
    pnpm dev
    ```
+
+## Deployment
+
+### Docker
+
+Build and run locally:
+```bash
+docker build -t docforge .
+docker run -p 3000:3000 --env-file .env docforge
+```
+
+### Railway
+
+1. Connect your GitHub repository to [Railway](https://railway.app)
+2. Add a PostgreSQL service (or use [Neon](https://neon.tech) for managed Postgres)
+3. Set environment variables in the Railway dashboard:
+   - `DATABASE_URL` — PostgreSQL connection string
+   - `NEXTAUTH_SECRET` — generate with `openssl rand -base64 32`
+   - `NEXTAUTH_URL` — your Railway app URL (e.g., `https://docforge-production.up.railway.app`)
+   - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_PRICE_ID`, `STRIPE_BUSINESS_PRICE_ID`
+   - `RESEND_API_KEY`, `EMAIL_FROM`
+4. Railway auto-deploys on push. Run migrations manually or add to the Dockerfile CMD:
+   ```
+   CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+   ```
+
+### Health check
+`GET /api/health` — returns `{ "status": "healthy" }` with 200, or `{ "status": "unhealthy" }` with 503.
 
 ## Environment variables
 
