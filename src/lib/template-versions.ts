@@ -1,12 +1,17 @@
+import { Prisma } from '@prisma/client';
+
 import { prisma } from '@/lib/prisma';
+
+type TemplateVersionsClient = Prisma.TransactionClient | typeof prisma;
 
 export async function createTemplateVersion(params: {
   templateId: string;
   name: string;
   description: string | null;
   content: string;
+  tx?: TemplateVersionsClient;
 }) {
-  return prisma.$transaction(async (tx) => {
+  const run = async (tx: TemplateVersionsClient) => {
     const template = await tx.template.update({
       where: { id: params.templateId },
       data: {
@@ -26,7 +31,13 @@ export async function createTemplateVersion(params: {
         content: params.content
       }
     });
-  });
+  };
+
+  if (params.tx) {
+    return run(params.tx);
+  }
+
+  return prisma.$transaction(run);
 }
 
 export async function createInitialVersion(params: {
@@ -34,8 +45,11 @@ export async function createInitialVersion(params: {
   name: string;
   description: string | null;
   content: string;
+  tx?: TemplateVersionsClient;
 }) {
-  return prisma.templateVersion.create({
+  const client = params.tx ?? prisma;
+
+  return client.templateVersion.create({
     data: {
       templateId: params.templateId,
       version: 1,

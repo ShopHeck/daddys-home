@@ -70,20 +70,23 @@ export async function POST(_: Request, { params }: { params: { id: string; versi
     return NextResponse.json({ error: 'Version not found.' }, { status: 404 });
   }
 
-  await prisma.template.update({
-    where: { id: params.id },
-    data: {
+  const newVersion = await prisma.$transaction(async (tx) => {
+    await tx.template.update({
+      where: { id: params.id },
+      data: {
+        name: version.name,
+        description: version.description,
+        content: version.content
+      }
+    });
+
+    return createTemplateVersion({
+      templateId: params.id,
       name: version.name,
       description: version.description,
-      content: version.content
-    }
-  });
-
-  const newVersion = await createTemplateVersion({
-    templateId: params.id,
-    name: version.name,
-    description: version.description,
-    content: version.content
+      content: version.content,
+      tx
+    });
   });
 
   return NextResponse.json({

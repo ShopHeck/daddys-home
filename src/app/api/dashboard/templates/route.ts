@@ -47,28 +47,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Name and content are required.' }, { status: 400 });
   }
 
-  const template = await prisma.template.create({
-    data: {
-      userId: session.user.id,
-      name: body.name.trim(),
-      description: body.description?.trim() || null,
-      content: body.content
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      currentVersion: true,
-      createdAt: true,
-      updatedAt: true
-    }
-  });
+  const trimmedName = body.name.trim();
+  const trimmedDescription = body.description?.trim() || null;
+  const content = body.content;
 
-  await createInitialVersion({
-    templateId: template.id,
-    name: body.name.trim(),
-    description: body.description?.trim() || null,
-    content: body.content
+  const template = await prisma.$transaction(async (tx) => {
+    const createdTemplate = await tx.template.create({
+      data: {
+        userId: session.user.id,
+        name: trimmedName,
+        description: trimmedDescription,
+        content
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        currentVersion: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    await createInitialVersion({
+      templateId: createdTemplate.id,
+      name: trimmedName,
+      description: trimmedDescription,
+      content,
+      tx
+    });
+
+    return createdTemplate;
   });
 
   return NextResponse.json(template, { status: 201 });

@@ -66,29 +66,41 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: 'Template not found.' }, { status: 404 });
   }
 
-  const template = await prisma.template.update({
-    where: { id: existing.id },
-    data: {
-      name: body.name.trim(),
-      description: body.description?.trim() || null,
-      content: body.content
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      currentVersion: true,
-      createdAt: true,
-      updatedAt: true,
-      content: true
-    }
-  });
+  const trimmedName = body.name.trim();
+  const trimmedDescription = body.description?.trim() || null;
+  const content = body.content;
 
-  const version = await createTemplateVersion({
-    templateId: existing.id,
-    name: body.name.trim(),
-    description: body.description?.trim() || null,
-    content: body.content
+  const { template, version } = await prisma.$transaction(async (tx) => {
+    const updatedTemplate = await tx.template.update({
+      where: { id: existing.id },
+      data: {
+        name: trimmedName,
+        description: trimmedDescription,
+        content
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        currentVersion: true,
+        createdAt: true,
+        updatedAt: true,
+        content: true
+      }
+    });
+
+    const createdVersion = await createTemplateVersion({
+      templateId: existing.id,
+      name: trimmedName,
+      description: trimmedDescription,
+      content,
+      tx
+    });
+
+    return {
+      template: updatedTemplate,
+      version: createdVersion
+    };
   });
 
   return NextResponse.json({
