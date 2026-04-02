@@ -64,9 +64,14 @@ export function TemplatesClient() {
           <h1 className="text-3xl font-semibold tracking-tight text-white">Templates</h1>
           <p className="mt-2 text-sm text-slate-400">Manage your reusable HTML and Handlebars templates.</p>
         </div>
-        <Link className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500" href="/dashboard/templates/new">
-          New Template
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" href="/dashboard/templates/gallery">
+            Browse Gallery
+          </Link>
+          <Link className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500" href="/dashboard/templates/new">
+            New Template
+          </Link>
+        </div>
       </div>
 
       {error ? <p className="text-sm text-rose-400">{error}</p> : null}
@@ -75,7 +80,22 @@ export function TemplatesClient() {
         {loading ? (
           <div className="p-6 text-sm text-slate-400">Loading templates...</div>
         ) : templates.length === 0 ? (
-          <div className="p-6 text-sm text-slate-400">No templates yet. Create your first template to start rendering PDFs.</div>
+          <div className="p-6">
+            <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-6">
+              <h2 className="text-xl font-semibold text-white">Get started with a pre-built template</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                Browse professionally designed invoices, proposals, reports, labels, and more — then clone one into your account and customize it.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500" href="/dashboard/templates/gallery">
+                  Browse Gallery
+                </Link>
+                <Link className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" href="/dashboard/templates/new">
+                  Start from Scratch
+                </Link>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-700 text-left text-sm">
@@ -124,7 +144,7 @@ export function TemplatesClient() {
         description="This action cannot be undone."
         loading={deletingId === confirmingId}
         onCancel={() => setConfirmingId(null)}
-        onConfirm={() => confirmingId ? void handleDelete(confirmingId) : undefined}
+        onConfirm={() => (confirmingId ? void handleDelete(confirmingId) : undefined)}
         open={Boolean(confirmingId)}
         title="Delete template?"
         tone="danger"
