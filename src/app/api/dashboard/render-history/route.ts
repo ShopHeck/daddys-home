@@ -58,7 +58,9 @@ export async function GET(request: Request) {
     }
 
     if (to) {
-      createdAt.lte = to;
+      const endOfDay = new Date(to);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+      createdAt.lte = endOfDay;
     }
 
     where.createdAt = createdAt;
@@ -83,7 +85,10 @@ export async function GET(request: Request) {
           select: { id: true, name: true, keyPrefix: true }
         }
       },
-      orderBy: { [safeSortBy]: sortOrder } as Prisma.UsageRecordOrderByWithRelationInput,
+      orderBy: [
+        { [safeSortBy]: sortOrder } as Prisma.UsageRecordOrderByWithRelationInput,
+        { id: 'asc' }
+      ],
       skip: (page - 1) * pageSize,
       take: pageSize
     }),
