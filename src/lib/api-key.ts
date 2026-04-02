@@ -2,6 +2,13 @@ import { createHash, randomBytes } from 'crypto';
 import type { NextRequest } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import type { Tier } from '@/types';
+
+export type ValidatedApiKey = {
+  apiKeyId: string;
+  userId: string;
+  tier: Tier;
+};
 
 export function generateApiKey(): { key: string; hash: string; prefix: string } {
   const raw = randomBytes(32).toString('hex');
@@ -16,12 +23,20 @@ export function hashApiKey(key: string): string {
   return createHash('sha256').update(key).digest('hex');
 }
 
-export async function validateApiKey(key: string) {
+export async function validateApiKey(key: string): Promise<ValidatedApiKey | null> {
   const keyHash = hashApiKey(key);
 
   const apiKey = await prisma.apiKey.findUnique({
     where: { keyHash },
-    select: { id: true, userId: true }
+    select: {
+      id: true,
+      userId: true,
+      user: {
+        select: {
+          tier: true
+        }
+      }
+    }
   });
 
   if (!apiKey) {
@@ -33,7 +48,11 @@ export async function validateApiKey(key: string) {
     data: { lastUsedAt: new Date() }
   });
 
-  return apiKey;
+  return {
+    apiKeyId: apiKey.id,
+    userId: apiKey.userId,
+    tier: apiKey.user.tier
+  };
 }
 
 export function getAuthenticatedUserId(request: Request | NextRequest): string | null {
