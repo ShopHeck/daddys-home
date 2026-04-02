@@ -1,10 +1,10 @@
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
-import { compare } from 'bcryptjs';
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GitHubProvider from 'next-auth/providers/github';
 
 import { prisma } from '@/lib/prisma';
+import type { Tier } from '@/types';
 
 const providers: NextAuthOptions['providers'] = [
   CredentialsProvider({
@@ -26,6 +26,7 @@ const providers: NextAuthOptions['providers'] = [
         return null;
       }
 
+      const { compare } = await import('bcryptjs');
       const isValid = await compare(credentials.password, user.password);
 
       if (!isValid) {
@@ -55,17 +56,25 @@ if (process.env.GITHUB_ID && process.env.GITHUB_SECRET) {
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
-    strategy: 'database'
+    strategy: 'jwt'
   },
   providers,
   pages: {
-    signIn: '/'
+    signIn: '/auth/login'
   },
   callbacks: {
-    async session({ session, user }) {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.tier = user.tier;
+      }
+
+      return token;
+    },
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = user.id;
-        session.user.tier = user.tier;
+        session.user.id = (token.id as string | undefined) ?? token.sub ?? '';
+        session.user.tier = (token.tier as Tier | undefined) ?? 'FREE';
       }
 
       return session;

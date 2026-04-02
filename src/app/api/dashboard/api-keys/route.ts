@@ -1,0 +1,66 @@
+import { getServerSession } from 'next-auth';
+import { NextResponse } from 'next/server';
+
+import { generateApiKey, hashApiKey } from '@/lib/api-key';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+
+export const runtime = 'nodejs';
+
+export async function GET() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const keys = await prisma.apiKey.findMany({
+    where: { userId: session.user.id },
+    select: {
+      id: true,
+      name: true,
+      keyPrefix: true,
+      createdAt: true,
+      lastUsedAt: true
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  return NextResponse.json(keys);
+}
+
+export async function POST(request: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const body = (await request.json().catch(() => null)) as { name?: string } | null;
+  const name = body?.name?.trim();
+
+  if (!name) {
+    return NextResponse.json({ error: 'API key name is required.' }, { status: 400 });
+  }
+
+  const generated = generateApiKey();
+  const keyHash = hashApiKey(generated.key);
+
+  const apiKey = await prisma.apiKey.create({
+    data: {
+      userId: session.user.id,
+      name,
+      keyHash,
+      keyPrefix: generated.prefix
+    },
+    select: {
+      id: true,
+      name: true,
+      keyPrefix: true,
+      createdAt: true,
+      lastUsedAt: true
+    }
+  });
+
+  return NextResponse.json({ ...apiKey, key: generated.key }, { status: 201 });
+}
