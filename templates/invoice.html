@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice {{invoiceNumber}}</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        color: #0f172a;
+        margin: 0;
+        padding: 32px;
+        background: #f8fafc;
+      }
+
+      .invoice {
+        max-width: 840px;
+        margin: 0 auto;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      }
+
+      .header {
+        padding: 32px;
+        background: linear-gradient(135deg, #0f172a, #1d4ed8);
+        color: #ffffff;
+      }
+
+      .header h1 {
+        margin: 0 0 8px;
+        font-size: 30px;
+      }
+
+      .meta,
+      .totals {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 24px 32px 0;
+      }
+
+      .meta div,
+      .totals div {
+        flex: 1;
+      }
+
+      .label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #64748b;
+      }
+
+      table {
+        width: calc(100% - 64px);
+        margin: 24px 32px;
+        border-collapse: collapse;
+        background: #ffffff;
+      }
+
+      th,
+      td {
+        padding: 14px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: left;
+      }
+
+      th {
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #475569;
+        background: #f8fafc;
+      }
+
+      tfoot td {
+        font-weight: bold;
+        border-bottom: none;
+      }
+
+      .total {
+        text-align: right;
+        font-size: 20px;
+        color: #0f172a;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="invoice">
+      <header class="header">
+        <h1>{{companyName}}</h1>
+        <p>Invoice {{invoiceNumber}}</p>
+      </header>
+
+      <div class="meta">
+        <div>
+          <span class="label">Date</span>
+          <strong>{{date}}</strong>
+        </div>
+        <div>
+          <span class="label">Invoice Number</span>
+          <strong>{{invoiceNumber}}</strong>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Quantity</th>
+            <th>Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each lineItems}}
+            <tr>
+              <td>{{description}}</td>
+              <td>{{quantity}}</td>
+              <td>{{price}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">Total</td>
+            <td>{{total}}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+  </body>
+</html>
