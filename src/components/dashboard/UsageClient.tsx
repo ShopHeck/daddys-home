@@ -68,6 +68,9 @@ export function UsageClient() {
     return Math.max(...usage.daily.map((entry) => entry.count), 1);
   }, [usage]);
 
+  const getDayNumber = (date: string) => parseInt(date.split('-')[2] ?? '0', 10);
+  const formatLocalDate = (date: string) => new Date(`${date}T00:00:00`).toLocaleDateString();
+
   if (loading) {
     return <div className="text-sm text-slate-400">Loading usage...</div>;
   }
@@ -126,7 +129,7 @@ export function UsageClient() {
                 <div className="w-6 rounded-t bg-blue-500" style={{ height: `${Math.max((day.count / maxCount) * 100, day.count > 0 ? 6 : 2)}%` }} />
               </div>
               <p className="mt-3 text-sm font-medium text-white">{day.count}</p>
-              <p className="mt-1 text-xs text-slate-400">{new Date(day.date).getDate()}</p>
+              <p className="mt-1 text-xs text-slate-400">{getDayNumber(day.date)}</p>
             </div>
           ))}
         </div>
@@ -142,7 +145,7 @@ export function UsageClient() {
             <tbody className="divide-y divide-slate-700 text-slate-300">
               {usage.daily.map((day) => (
                 <tr key={day.date}>
-                  <td className="px-4 py-3">{new Date(day.date).toLocaleDateString()}</td>
+                  <td className="px-4 py-3">{formatLocalDate(day.date)}</td>
                   <td className="px-4 py-3">{day.count}</td>
                 </tr>
               ))}

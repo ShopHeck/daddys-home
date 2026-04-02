@@ -185,7 +185,12 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
               <h2 className="text-lg font-semibold text-white">Rendered preview</h2>
               {previewError ? <p className="mt-3 text-sm text-rose-400">{previewError}</p> : null}
               <div className="mt-4 overflow-hidden rounded-lg border border-slate-700 bg-white">
-                <iframe className="h-[420px] w-full" srcDoc={previewHtml || '<html><body style="font-family: Arial; padding: 24px; color: #64748b;">Click preview to render this template.</body></html>'} title="Template preview" />
+                <iframe
+                  className="h-[420px] w-full"
+                  sandbox="allow-same-origin"
+                  srcDoc={previewHtml || '<html><body style="font-family: Arial; padding: 24px; color: #64748b;">Click preview to render this template.</body></html>'}
+                  title="Template preview"
+                />
               </div>
             </div>
           </div>
