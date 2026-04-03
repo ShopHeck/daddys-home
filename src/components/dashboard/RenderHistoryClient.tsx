@@ -20,6 +20,7 @@ type RenderHistoryRecord = {
   templateVersion: number | null;
   apiKeyName: string | null;
   apiKeyPrefix: string | null;
+  hasStoredPdf: boolean;
 };
 
 type RenderHistoryResponse = {
@@ -371,6 +372,7 @@ export function RenderHistoryClient() {
                         <span className={sortBy === 'createdAt' ? 'text-blue-300' : 'text-slate-500'}>{getSortIndicator(sortBy === 'createdAt', sortOrder)}</span>
                       </button>
                     </th>
+                    <th className="px-6 py-4 font-medium">PDF</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700">
@@ -416,6 +418,20 @@ export function RenderHistoryClient() {
                           )}
                         </td>
                         <td className="px-6 py-4 text-slate-400">{new Date(record.createdAt).toLocaleString()}</td>
+                        <td className="px-6 py-4">
+                          {record.hasStoredPdf ? (
+                            <a
+                              href={`/api/dashboard/render-history/${record.id}/download`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+                            >
+                              Download
+                            </a>
+                          ) : (
+                            <span className="text-slate-500 text-sm">—</span>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}

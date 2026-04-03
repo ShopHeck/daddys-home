@@ -117,6 +117,7 @@ model UsageRecord {
   errorMessage      String?          @db.Text
   apiKeyId          String?
   apiKey            ApiKey?          @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  storageKey        String?          // S3 key for stored PDF, e.g. "teams/{teamId}/renders/{id}.pdf"
   createdAt         DateTime         @default(now())
 
   @@index([teamId, createdAt])
