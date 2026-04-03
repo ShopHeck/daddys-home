@@ -24,6 +24,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   const url = new URL(request.url);
   const page = Math.max(parseInt(url.searchParams.get('page') ?? '1', 10), 1);
   const pageSize = Math.min(Math.max(parseInt(url.searchParams.get('pageSize') ?? '20', 10), 1), 100);
@@ -40,7 +45,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Invalid date filter.' }, { status: 400 });
   }
 
-  const where: Prisma.UsageRecordWhereInput = { userId: session.user.id };
+  const where: Prisma.UsageRecordWhereInput = { teamId };
 
   if (status === 'SUCCESS' || status === 'FAILED') {
     where.status = status;

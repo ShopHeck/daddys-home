@@ -14,10 +14,15 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const summary = await getUsageSummary(session.user.id);
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const summary = await getUsageSummary(teamId);
   const records = await prisma.usageRecord.findMany({
     where: {
-      userId: session.user.id,
+      teamId,
       createdAt: {
         gte: summary.periodStart,
         lte: summary.periodEnd

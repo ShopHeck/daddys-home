@@ -1,32 +1,33 @@
 import { NextResponse } from 'next/server';
 
-import { getAuthenticatedUserId } from '@/lib/api-key';
-import { prisma } from '@/lib/prisma';
+import { getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
 import {
   createWebhookEndpoint,
   isValidWebhookUrl,
   listWebhookEndpoints,
   parseWebhookEvents
 } from '@/lib/webhook-management';
+import { getTeamTier } from '@/lib/teams';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
-  const userId = getAuthenticatedUserId(request);
+  const teamId = getAuthenticatedTeamId(request);
 
-  if (!userId) {
+  if (!teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const endpoints = await listWebhookEndpoints(userId);
+  const endpoints = await listWebhookEndpoints(teamId);
 
   return NextResponse.json(endpoints);
 }
 
 export async function POST(request: Request) {
+  const teamId = getAuthenticatedTeamId(request);
   const userId = getAuthenticatedUserId(request);
 
-  if (!userId) {
+  if (!teamId || !userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -45,19 +46,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'At least one valid webhook event is required.' }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { tier: true }
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: 'User not found.' }, { status: 404 });
-  }
+  const tier = await getTeamTier(teamId);
 
   try {
     const endpoint = await createWebhookEndpoint({
+      teamId,
       userId,
-      tier: user.tier,
+      tier,
       url,
       events
     });

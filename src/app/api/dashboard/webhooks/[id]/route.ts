@@ -20,7 +20,12 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const endpoint = await getWebhookEndpoint(params.id, session.user.id);
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const endpoint = await getWebhookEndpoint(params.id, teamId);
 
   if (!endpoint) {
     return NextResponse.json({ error: 'Webhook endpoint not found.' }, { status: 404 });
@@ -34,6 +39,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
   }
 
   const body = (await request.json().catch(() => null)) as {
@@ -77,7 +87,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
   const endpoint = await updateWebhookEndpoint({
     id: params.id,
-    userId: session.user.id,
+    teamId,
     data
   });
 
@@ -95,7 +105,12 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const deleted = await deleteWebhookEndpoint(params.id, session.user.id);
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const deleted = await deleteWebhookEndpoint(params.id, teamId);
 
   if (!deleted) {
     return NextResponse.json({ error: 'Webhook endpoint not found.' }, { status: 404 });

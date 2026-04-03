@@ -75,9 +75,9 @@ export function serializeWebhookDeliveries(deliveries: WebhookDeliveryRecord[]) 
   return deliveries;
 }
 
-export async function listWebhookEndpoints(userId: string) {
+export async function listWebhookEndpoints(teamId: string) {
   const endpoints = await prisma.webhookEndpoint.findMany({
-    where: { userId },
+    where: { teamId },
     select: endpointSelect,
     orderBy: { createdAt: 'desc' }
   });
@@ -85,11 +85,11 @@ export async function listWebhookEndpoints(userId: string) {
   return endpoints.map((endpoint) => serializeWebhookEndpoint(endpoint));
 }
 
-export async function getWebhookEndpoint(id: string, userId: string, revealSecret = false) {
+export async function getWebhookEndpoint(id: string, teamId: string, revealSecret = false) {
   const endpoint = await prisma.webhookEndpoint.findFirst({
     where: {
       id,
-      userId
+      teamId
     },
     select: endpointSelect
   });
@@ -102,15 +102,17 @@ export async function getWebhookEndpoint(id: string, userId: string, revealSecre
 }
 
 export async function createWebhookEndpoint(params: {
+  teamId: string;
   userId: string;
   tier: Tier;
   url: string;
   events: WebhookEvent[];
 }) {
-  await assertWebhookLimit(params.userId, params.tier);
+  await assertWebhookLimit(params.teamId, params.tier);
 
   const endpoint = await prisma.webhookEndpoint.create({
     data: {
+      teamId: params.teamId,
       userId: params.userId,
       url: params.url,
       secret: generateWebhookSecret(),
@@ -124,7 +126,7 @@ export async function createWebhookEndpoint(params: {
 
 export async function updateWebhookEndpoint(params: {
   id: string;
-  userId: string;
+  teamId: string;
   data: {
     url?: string;
     events?: WebhookEvent[];
@@ -134,7 +136,7 @@ export async function updateWebhookEndpoint(params: {
   const existing = await prisma.webhookEndpoint.findFirst({
     where: {
       id: params.id,
-      userId: params.userId
+      teamId: params.teamId
     },
     select: { id: true }
   });
@@ -152,11 +154,11 @@ export async function updateWebhookEndpoint(params: {
   return serializeWebhookEndpoint(endpoint);
 }
 
-export async function deleteWebhookEndpoint(id: string, userId: string) {
+export async function deleteWebhookEndpoint(id: string, teamId: string) {
   const existing = await prisma.webhookEndpoint.findFirst({
     where: {
       id,
-      userId
+      teamId
     },
     select: { id: true }
   });
@@ -174,7 +176,7 @@ export async function deleteWebhookEndpoint(id: string, userId: string) {
 
 export async function listWebhookDeliveries(params: {
   endpointId: string;
-  userId: string;
+  teamId: string;
   page: number;
   pageSize: number;
   status?: 'pending' | 'success' | 'failed';
@@ -182,7 +184,7 @@ export async function listWebhookDeliveries(params: {
   const endpoint = await prisma.webhookEndpoint.findFirst({
     where: {
       id: params.endpointId,
-      userId: params.userId
+      teamId: params.teamId
     },
     select: { id: true }
   });

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getAuthenticatedUserId } from '@/lib/api-key';
+import { getAuthenticatedTeamId } from '@/lib/api-key';
 import {
   deleteWebhookEndpoint,
   getWebhookEndpoint,
@@ -13,13 +13,13 @@ import type { WebhookEvent } from '@/types';
 export const runtime = 'nodejs';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const userId = getAuthenticatedUserId(request);
+  const teamId = getAuthenticatedTeamId(request);
 
-  if (!userId) {
+  if (!teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const endpoint = await getWebhookEndpoint(params.id, userId);
+  const endpoint = await getWebhookEndpoint(params.id, teamId);
 
   if (!endpoint) {
     return NextResponse.json({ error: 'Webhook endpoint not found.' }, { status: 404 });
@@ -29,9 +29,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  const userId = getAuthenticatedUserId(request);
+  const teamId = getAuthenticatedTeamId(request);
 
-  if (!userId) {
+  if (!teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -76,7 +76,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
   const endpoint = await updateWebhookEndpoint({
     id: params.id,
-    userId,
+    teamId,
     data
   });
 
@@ -88,13 +88,13 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const userId = getAuthenticatedUserId(request);
+  const teamId = getAuthenticatedTeamId(request);
 
-  if (!userId) {
+  if (!teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const deleted = await deleteWebhookEndpoint(params.id, userId);
+  const deleted = await deleteWebhookEndpoint(params.id, teamId);
 
   if (!deleted) {
     return NextResponse.json({ error: 'Webhook endpoint not found.' }, { status: 404 });

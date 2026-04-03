@@ -98,7 +98,7 @@ export async function POST(request: Request) {
   });
 
   void dispatchWebhooks({
-    userId: session.user.id,
+    teamId,
     event: 'template.created',
     data: { templateId: template.id, name: template.name }
   });
