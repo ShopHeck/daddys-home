@@ -2,7 +2,8 @@
 const nextConfig = {
   output: 'standalone',
   experimental: {
-    serverComponentsExternalPackages: ['puppeteer']
+    serverComponentsExternalPackages: ['puppeteer'],
+    instrumentationHook: true
   }
 };
 
