@@ -15,8 +15,13 @@ export async function GET(_: Request, { params }: { params: { id: string; versio
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   const template = await prisma.template.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id: params.id, teamId },
     select: { id: true }
   });
 
@@ -53,8 +58,13 @@ export async function POST(_: Request, { params }: { params: { id: string; versi
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   const template = await prisma.template.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id: params.id, teamId },
     select: { id: true }
   });
 

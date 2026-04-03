@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getAuthenticatedApiKeyId, getAuthenticatedUserId } from '@/lib/api-key';
+import { getAuthenticatedApiKeyId, getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
 import { prisma } from '@/lib/prisma';
 import { renderPdfFromTemplate } from '@/lib/renderer';
 import { validateDataAgainstSchema, type VariableSchema } from '@/lib/template-variables';
@@ -13,9 +13,10 @@ export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   const userId = getAuthenticatedUserId(request);
+  const teamId = getAuthenticatedTeamId(request);
   const apiKeyId = getAuthenticatedApiKeyId(request);
 
-  if (!userId) {
+  if (!userId || !teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
   const template = await prisma.template.findFirst({
     where: {
       id: body.templateId,
-      userId
+      teamId
     },
     select: {
       id: true,

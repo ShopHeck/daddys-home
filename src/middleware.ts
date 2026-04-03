@@ -6,6 +6,7 @@ import type { Tier } from '@/types';
 
 type ValidationPayload = {
   userId?: string;
+  teamId?: string;
   tier?: Tier;
   apiKeyId?: string;
   error?: string;
@@ -88,7 +89,7 @@ export async function middleware(request: NextRequest) {
 
   const payload = await validationResponse.json().catch(() => null) as ValidationPayload | null;
 
-  if (!validationResponse.ok || !payload?.userId || !payload.tier || !payload.apiKeyId) {
+  if (!validationResponse.ok || !payload?.userId || !payload.teamId || !payload.tier || !payload.apiKeyId) {
     const response = NextResponse.json(
       { error: payload?.error ?? 'Invalid API key' },
       { status: validationResponse.status || 401 }
@@ -107,6 +108,7 @@ export async function middleware(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-user-id', payload.userId);
+  requestHeaders.set('x-team-id', payload.teamId);
   requestHeaders.set('x-api-key-id', payload.apiKeyId);
 
   const response = NextResponse.next({

@@ -7,6 +7,7 @@ import type { Tier } from '@/types';
 export type ValidatedApiKey = {
   apiKeyId: string;
   userId: string;
+  teamId: string;
   tier: Tier;
 };
 
@@ -31,6 +32,7 @@ export async function validateApiKey(key: string): Promise<ValidatedApiKey | nul
     select: {
       id: true,
       userId: true,
+      teamId: true,
       user: {
         select: {
           tier: true
@@ -51,6 +53,7 @@ export async function validateApiKey(key: string): Promise<ValidatedApiKey | nul
   return {
     apiKeyId: apiKey.id,
     userId: apiKey.userId,
+    teamId: apiKey.teamId,
     tier: apiKey.user.tier
   };
 }
@@ -61,4 +64,8 @@ export function getAuthenticatedUserId(request: Request | NextRequest): string |
 
 export function getAuthenticatedApiKeyId(request: Request | NextRequest): string | null {
   return request.headers.get('x-api-key-id');
+}
+
+export function getAuthenticatedTeamId(request: Request | NextRequest): string | null {
+  return request.headers.get('x-team-id');
 }

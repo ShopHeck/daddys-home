@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import type { Tier } from '@/types';
 import type { TeamRole } from '@prisma/client';
 
 export async function getTeamMembership(teamId: string, userId: string) {
@@ -46,4 +47,12 @@ export async function ensurePersonalTeam(userId: string, userName: string) {
     data: { activeTeamId: team.id }
   });
   return team.id;
+}
+
+export async function getTeamTier(teamId: string): Promise<Tier> {
+  const owner = await prisma.teamMember.findFirst({
+    where: { teamId, role: 'OWNER' },
+    include: { user: { select: { tier: true } } }
+  });
+  return (owner?.user.tier as Tier) ?? 'FREE';
 }
