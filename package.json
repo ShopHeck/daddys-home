@@ -10,7 +10,11 @@
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate deploy",
-    "prisma:migrate:dev": "prisma migrate dev"
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:seed": "npx tsx prisma/seed-teams.ts"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed-teams.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",

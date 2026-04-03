@@ -53,6 +53,7 @@ declare module 'next-auth' {
     user: {
       id: string;
       tier: Tier;
+      activeTeamId?: string;
     } & DefaultSession['user'];
   }
 
@@ -66,5 +67,6 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id?: string;
     tier?: Tier;
+    activeTeamId?: string;
   }
 }

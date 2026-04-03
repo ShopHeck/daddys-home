@@ -53,6 +53,25 @@ export async function POST(request: Request) {
     }
   });
 
+  // Create personal team for new user
+  const team = await prisma.team.create({
+    data: {
+      name: `${name}'s Workspace`,
+      personal: true,
+      members: {
+        create: {
+          userId: user.id,
+          role: 'OWNER'
+        }
+      }
+    }
+  });
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { activeTeamId: team.id }
+  });
+
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
   sendEmail({

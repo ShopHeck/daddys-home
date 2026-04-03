@@ -68,6 +68,13 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.tier = user.tier;
 
+        // Load activeTeamId for new sign-ins
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { activeTeamId: true }
+        });
+        token.activeTeamId = dbUser?.activeTeamId ?? undefined;
+
         return token;
       }
 
@@ -79,11 +86,12 @@ export const authOptions: NextAuthOptions = {
 
       const existingUser = await prisma.user.findUnique({
         where: { id: userId },
-        select: { tier: true }
+        select: { tier: true, activeTeamId: true }
       });
 
       if (existingUser) {
         token.tier = existingUser.tier;
+        token.activeTeamId = existingUser.activeTeamId ?? undefined;
       }
 
       return token;
@@ -92,6 +100,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = (token.id as string | undefined) ?? token.sub ?? '';
         session.user.tier = (token.tier as Tier | undefined) ?? 'FREE';
+        session.user.activeTeamId = token.activeTeamId as string | undefined;
       }
 
       return session;
