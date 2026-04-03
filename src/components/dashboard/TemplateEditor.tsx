@@ -52,6 +52,7 @@ type TemplatePayload = {
   name?: string;
   description?: string | null;
   content?: string;
+  css?: string | null;
   variableSchema?: VariableSchema | null;
   currentVersion?: number;
 };
@@ -177,6 +178,8 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
   const [savingSchema, setSavingSchema] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewMode, setPreviewMode] = useState<'html' | 'pdf'>('html');
+  const [activeTab, setActiveTab] = useState<'html' | 'css' | 'schema'>('html');
+  const [css, setCss] = useState('');
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(Boolean(templateId));
   const [saving, setSaving] = useState(false);
@@ -235,6 +238,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       setName(payload.name);
       setDescription(payload.description ?? '');
       setContent(payload.content);
+      setCss(payload.css ?? '');
       setVariableSchema(payload.variableSchema ?? null);
       setSchemaModified(false);
       setCurrentVersion(payload.currentVersion ?? 1);
@@ -283,8 +287,9 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
   const handlePreview = () => {
     try {
       const data = JSON.parse(sampleData) as Record<string, unknown>;
-      const compiled = Handlebars.compile(content);
-      setPreviewHtml(compiled(data));
+      const compiled = Handlebars.compile(content)(data);
+      const styledHtml = css ? `<style>${css}</style>${compiled}` : compiled;
+      setPreviewHtml(styledHtml);
       setPreviewError('');
       setPreviewMode('html');
     } catch (err) {
@@ -309,7 +314,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       const response = await fetch('/api/dashboard/templates/test-render', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, data: parsed })
+        body: JSON.stringify({ content, data: parsed, css: css.trim() || undefined })
       });
 
       if (!response.ok) {
@@ -336,7 +341,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
     const response = await fetch(templateId ? `/api/dashboard/templates/${templateId}` : '/api/dashboard/templates', {
       method: templateId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description, content, variableSchema })
+      body: JSON.stringify({ name, description, content, css: css.trim() || null, variableSchema })
     });
     const payload = (await response.json().catch(() => null)) as TemplatePayload | null;
 
@@ -356,6 +361,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       setName(payload.name ?? name);
       setDescription(payload.description ?? '');
       setContent(payload.content ?? content);
+      setCss(payload.css ?? css);
       setVariableSchema(payload.variableSchema ?? variableSchema);
       setSchemaModified(false);
       setCurrentVersion(payload.currentVersion ?? currentVersion);
@@ -534,8 +540,164 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
               />
             </div>
             <div>
-              <p className="mb-2 block text-sm font-medium text-slate-200">Content</p>
-              <CodeEditor className="min-h-[460px]" language="html" onChange={setContent} value={content} />
+              <div className="mb-3 flex items-center gap-2">
+                <button
+                  className={`${tabButtonClassName} ${activeTab === 'html' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                  onClick={() => setActiveTab('html')}
+                  type="button"
+                >
+                  HTML
+                </button>
+                <button
+                  className={`${tabButtonClassName} ${activeTab === 'css' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                  onClick={() => setActiveTab('css')}
+                  type="button"
+                >
+                  CSS
+                </button>
+                <button
+                  className={`${tabButtonClassName} ${activeTab === 'schema' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                  onClick={() => setActiveTab('schema')}
+                  type="button"
+                >
+                  Variable Schema
+                </button>
+              </div>
+
+              {activeTab === 'html' && (
+                <CodeEditor
+                  className="min-h-[460px]"
+                  language="html"
+                  onChange={setContent}
+                  placeholder="<html>\n  <body>\n    <h1>Hello {{name}}</h1>\n  </body>\n</html>"
+                  value={content}
+                />
+              )}
+
+              {activeTab === 'css' && (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-xs text-slate-400">Quick add font:</span>
+                    {[
+                      { name: 'Inter', import: "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');" },
+                      { name: 'Roboto', import: "@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');" },
+                      { name: 'Open Sans', import: "@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');" },
+                      { name: 'Lato', import: "@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap');" },
+                      { name: 'Playfair Display', import: "@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');" }
+                    ].map((font) => (
+                      <button
+                        key={font.name}
+                        className="rounded bg-slate-700 px-2 py-1 text-xs text-slate-300 transition hover:bg-slate-600 hover:text-white"
+                        onClick={() => setCss((prev) => (prev ? `${font.import}\n${prev}` : font.import))}
+                        type="button"
+                      >
+                        + {font.name}
+                      </button>
+                    ))}
+                  </div>
+                  <CodeEditor
+                    className="h-80"
+                    language="css"
+                    onChange={setCss}
+                    placeholder="/* Add custom CSS here */\n\nbody {\n  font-family: 'Inter', sans-serif;\n}"
+                    value={css}
+                  />
+                </div>
+              )}
+
+              {activeTab === 'schema' && (
+                <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-300">Auto-detected from template</span>
+                    {variableSchema ? (
+                      <span className="text-xs text-slate-400">{variableSchema.variables.length} variables</span>
+                    ) : null}
+                  </div>
+                  {variableSchema && variableSchema.variables.length > 0 ? (
+                    <div className="mt-4 max-h-80 space-y-3 overflow-y-auto">
+                      {variableSchema.variables.map((variable) => (
+                        <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3" key={variable.name}>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <code className="text-sm font-medium text-blue-300">{variable.name}</code>
+                              <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                                {variable.type}
+                              </span>
+                            </div>
+                            <label className="flex items-center gap-1.5 text-xs text-slate-400">
+                              <input
+                                checked={variable.required}
+                                className="rounded border-slate-600"
+                                onChange={(event) =>
+                                  updateVariable(variable.name, (current) => ({ ...current, required: event.target.checked }))
+                                }
+                                type="checkbox"
+                              />
+                              Required
+                            </label>
+                          </div>
+                          <input
+                            className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500"
+                            onChange={(event) =>
+                              updateVariable(variable.name, (current) => ({ ...current, description: event.target.value }))
+                            }
+                            placeholder="Add a description..."
+                            type="text"
+                            value={variable.description}
+                          />
+                          {variable.type === 'array' && variable.children && variable.children.length > 0 ? (
+                            <div className="ml-3 mt-3 space-y-2 border-l border-slate-700 pl-3">
+                              <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Item fields</span>
+                              {variable.children.map((child) => (
+                                <div className="rounded border border-slate-700 bg-slate-950/50 p-2" key={child.name}>
+                                  <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2">
+                                      <code className="text-xs text-slate-300">{child.name}</code>
+                                      <span className="rounded bg-slate-700 px-1 py-0.5 text-[10px] text-slate-500">{child.type}</span>
+                                    </div>
+                                    <label className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                                      <input
+                                        checked={child.required}
+                                        className="rounded border-slate-600"
+                                        onChange={(event) =>
+                                          updateVariable(variable.name, (current) => ({
+                                            ...current,
+                                            children: current.children?.map((item) =>
+                                              item.name === child.name ? { ...item, required: event.target.checked } : item
+                                            )
+                                          }))
+                                        }
+                                        type="checkbox"
+                                      />
+                                      Required
+                                    </label>
+                                  </div>
+                                  <input
+                                    className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500"
+                                    onChange={(event) =>
+                                      updateVariable(variable.name, (current) => ({
+                                        ...current,
+                                        children: current.children?.map((item) =>
+                                              item.name === child.name ? { ...item, description: event.target.value } : item
+                                            )
+                                      }))
+                                    }
+                                    placeholder="Add a field description..."
+                                    type="text"
+                                    value={child.description}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-slate-500">No variables detected in template.</p>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap gap-3">
               <button className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" onClick={handlePreview} type="button">
@@ -577,104 +739,6 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                 ) : null}
               </div>
               <CodeEditor className="mt-4 min-h-52" language="json" onChange={setSampleData} value={sampleData} />
-            </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">Variables</h2>
-                {variableSchema ? <span className="text-xs text-slate-400">{variableSchema.variables.length} detected</span> : null}
-              </div>
-              <p className="mt-2 text-sm text-slate-400">Auto-detected from your template. Edit descriptions and required flags.</p>
-
-              {variableSchema && variableSchema.variables.length > 0 ? (
-                <div className="mt-4 max-h-80 space-y-3 overflow-y-auto">
-                  {variableSchema.variables.map((variable) => (
-                    <div key={variable.name} className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <code className="text-sm font-medium text-blue-300">{variable.name}</code>
-                          <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                            {variable.type}
-                          </span>
-                        </div>
-                        <label className="flex items-center gap-1.5 text-xs text-slate-400">
-                          <input
-                            checked={variable.required}
-                            className="rounded border-slate-600"
-                            onChange={(event) => updateVariable(variable.name, (current) => ({ ...current, required: event.target.checked }))}
-                            type="checkbox"
-                          />
-                          Required
-                        </label>
-                      </div>
-                      <input
-                        className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500"
-                        onChange={(event) => updateVariable(variable.name, (current) => ({ ...current, description: event.target.value }))}
-                        placeholder="Add a description..."
-                        type="text"
-                        value={variable.description}
-                      />
-                      {variable.type === 'array' && variable.children && variable.children.length > 0 ? (
-                        <div className="ml-3 mt-3 space-y-2 border-l border-slate-700 pl-3">
-                          <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Item fields</span>
-                          {variable.children.map((child) => (
-                            <div key={child.name} className="rounded border border-slate-700 bg-slate-950/50 p-2">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2">
-                                  <code className="text-xs text-slate-300">{child.name}</code>
-                                  <span className="rounded bg-slate-700 px-1 py-0.5 text-[10px] text-slate-500">{child.type}</span>
-                                </div>
-                                <label className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                                  <input
-                                    checked={child.required}
-                                    className="rounded border-slate-600"
-                                    onChange={(event) =>
-                                      updateVariable(variable.name, (current) => ({
-                                        ...current,
-                                        children: current.children?.map((item) =>
-                                          item.name === child.name ? { ...item, required: event.target.checked } : item
-                                        )
-                                      }))
-                                    }
-                                    type="checkbox"
-                                  />
-                                  Required
-                                </label>
-                              </div>
-                              <input
-                                className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500"
-                                onChange={(event) =>
-                                  updateVariable(variable.name, (current) => ({
-                                    ...current,
-                                    children: current.children?.map((item) =>
-                                      item.name === child.name ? { ...item, description: event.target.value } : item
-                                    )
-                                  }))
-                                }
-                                placeholder="Add a field description..."
-                                type="text"
-                                value={child.description}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-4 text-sm text-slate-500">{content.trim() ? 'No variables detected.' : 'Start typing to detect variables.'}</p>
-              )}
-
-              {schemaModified && templateId ? (
-                <button
-                  className="mt-3 w-full rounded-lg bg-slate-700 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={savingSchema}
-                  onClick={() => void handleSaveVariableSchema()}
-                  type="button"
-                >
-                  {savingSchema ? 'Saving variable descriptions...' : 'Save variable descriptions'}
-                </button>
-              ) : null}
             </div>
             <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
               <div className="flex items-center justify-between gap-4">

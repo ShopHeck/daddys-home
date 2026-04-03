@@ -23,6 +23,19 @@ export async function GET(request: Request, { params }: { params: { id: string }
     where: {
       id: params.id,
       teamId
+    },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      content: true,
+      css: true,
+      variableSchema: true,
+      currentVersion: true,
+      createdAt: true,
+      updatedAt: true,
+      userId: true,
+      teamId: true
     }
   });
 

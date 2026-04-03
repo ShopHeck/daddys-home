@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
   }
 
-  const body = await request.json().catch(() => null) as { name?: string; description?: string; content?: string } | null;
+  const body = await request.json().catch(() => null) as { name?: string; description?: string; content?: string; css?: string } | null;
 
   if (!body?.name?.trim() || !body?.content?.trim()) {
     return NextResponse.json({ error: 'Name and content are required' }, { status: 400 });
@@ -67,6 +67,7 @@ export async function POST(request: Request) {
         name: body.name!.trim(),
         description: body.description?.trim() || null,
         content: body.content!,
+        css: body.css?.trim() || null,
         variableSchema: schema as any
       },
       select: {
@@ -85,6 +86,7 @@ export async function POST(request: Request) {
         name: body.name!.trim(),
         description: body.description?.trim() || null,
         content: body.content!,
+        css: body.css?.trim() || null,
         variableSchema: schema
       },
       tx

@@ -71,6 +71,7 @@ model Template {
   name           String
   description    String?
   content        String            @db.Text
+  css            String?           @db.Text
   variableSchema Json?
   userId         String
   user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -93,6 +94,7 @@ model TemplateVersion {
   name           String
   description    String?
   content        String        @db.Text
+  css            String?       @db.Text
   variableSchema Json?
   createdAt      DateTime      @default(now())
   renders        UsageRecord[]

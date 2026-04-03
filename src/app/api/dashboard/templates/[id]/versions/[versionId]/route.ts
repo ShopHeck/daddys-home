@@ -43,6 +43,7 @@ export async function GET(_: Request, { params }: { params: { id: string; versio
       name: true,
       description: true,
       content: true,
+      css: true,
       createdAt: true
     }
   });
@@ -85,7 +86,7 @@ export async function POST(_: Request, { params }: { params: { id: string; versi
 
   const version = await prisma.templateVersion.findFirst({
     where: { id: params.versionId, templateId: params.id },
-    select: { name: true, description: true, content: true, variableSchema: true }
+    select: { name: true, description: true, content: true, css: true, variableSchema: true }
   });
 
   if (!version) {
@@ -99,6 +100,7 @@ export async function POST(_: Request, { params }: { params: { id: string; versi
         name: version.name,
         description: version.description,
         content: version.content,
+        css: version.css,
         variableSchema: version.variableSchema as any
       }
     });
@@ -109,6 +111,7 @@ export async function POST(_: Request, { params }: { params: { id: string; versi
         name: version.name,
         description: version.description,
         content: version.content,
+        css: version.css,
         variableSchema: version.variableSchema as VariableSchema | null
       },
       tx

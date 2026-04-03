@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     content?: string;
     data?: Record<string, unknown>;
     options?: RenderOptions;
+    css?: string;
   } | null;
 
   if (!body?.content?.trim()) {
@@ -32,7 +33,8 @@ export async function POST(request: Request) {
     const pdf = await renderPdfFromTemplate({
       template: body.content,
       data: body.data,
-      options: body.options
+      options: body.options,
+      css: body.css ?? undefined
     });
 
     return new NextResponse(pdf, {

@@ -26,16 +26,33 @@ function buildPdfOptions(options?: RenderOptions): PDFOptions {
   };
 }
 
+function injectCss(html: string, css: string): string {
+  if (!css.trim()) return html;
+  const styleBlock = `<style>\n${css}\n</style>`;
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${styleBlock}\n</head>`);
+  }
+  if (html.includes('<body')) {
+    return html.replace(/<body([^>]*)>/, `<body$1>\n${styleBlock}`);
+  }
+  return `${styleBlock}\n${html}`;
+}
+
 export async function renderPdfFromTemplate(params: {
   template: string;
   data: Record<string, unknown>;
   options?: RenderOptions;
+  css?: string;
 }) {
   const browser = await getBrowser();
   const page = await browser.newPage();
 
   try {
-    const html = compileTemplate(params.template, params.data);
+    let html = compileTemplate(params.template, params.data);
+
+    if (params.css) {
+      html = injectCss(html, params.css);
+    }
 
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
