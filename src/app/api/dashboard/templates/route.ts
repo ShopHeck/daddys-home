@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
+import { dispatchWebhooks } from '@/lib/webhooks';
 import { prisma } from '@/lib/prisma';
 import { extractVariables, mergeSchemas, type VariableSchema } from '@/lib/template-variables';
 import { createInitialVersion } from '@/lib/template-versions';
@@ -83,6 +84,12 @@ export async function POST(request: Request) {
     );
 
     return createdTemplate;
+  });
+
+  void dispatchWebhooks({
+    userId: session.user.id,
+    event: 'template.created',
+    data: { templateId: template.id, name: template.name }
   });
 
   return NextResponse.json(template, { status: 201 });

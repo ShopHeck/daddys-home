@@ -31,6 +31,7 @@ model User {
   templates              Template[]
   usageRecords           UsageRecord[]
   usageAlerts            UsageAlert[]
+  webhookEndpoints       WebhookEndpoint[]
   passwordResetTokens    PasswordResetToken[]
   tier                   Tier                 @default(FREE)
   stripeCustomerId       String?              @unique
@@ -112,6 +113,35 @@ model UsageAlert {
   sentAt    DateTime @default(now())
 
   @@unique([userId, threshold, period])
+}
+
+model WebhookEndpoint {
+  id         String            @id @default(cuid())
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  url        String
+  secret     String
+  events     String[]
+  active     Boolean           @default(true)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  deliveries WebhookDelivery[]
+}
+
+model WebhookDelivery {
+  id             String          @id @default(cuid())
+  endpointId     String
+  endpoint       WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  event          String
+  payload        Json
+  status         String          @default("pending")
+  attempts       Int             @default(0)
+  lastAttemptAt  DateTime?
+  responseStatus Int?
+  responseBody   String?         @db.Text
+  createdAt      DateTime        @default(now())
+
+  @@index([endpointId, createdAt])
 }
 
 model Account {

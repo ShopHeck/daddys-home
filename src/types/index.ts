@@ -2,6 +2,12 @@ import type { DefaultSession } from 'next-auth';
 
 export type Tier = 'FREE' | 'PRO' | 'BUSINESS';
 export type RenderStatus = 'SUCCESS' | 'FAILED';
+export type WebhookEvent =
+  | 'render.completed'
+  | 'render.failed'
+  | 'template.created'
+  | 'template.updated'
+  | 'template.deleted';
 
 export type RenderOptions = {
   format?: 'A4' | 'Letter';

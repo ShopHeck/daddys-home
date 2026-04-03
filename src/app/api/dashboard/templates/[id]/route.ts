@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
+import { dispatchWebhooks } from '@/lib/webhooks';
 import { prisma } from '@/lib/prisma';
 import { extractVariables, mergeSchemas, type VariableSchema } from '@/lib/template-variables';
 import { createTemplateVersion } from '@/lib/template-versions';
@@ -116,6 +117,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     };
   });
 
+  void dispatchWebhooks({
+    userId: session.user.id,
+    event: 'template.updated',
+    data: { templateId: existing.id, name }
+  });
+
   return NextResponse.json(payload);
 }
 
@@ -227,6 +234,12 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
 
   await prisma.template.delete({
     where: { id: existing.id }
+  });
+
+  void dispatchWebhooks({
+    userId: session.user.id,
+    event: 'template.deleted',
+    data: { templateId: existing.id }
   });
 
   return NextResponse.json({ success: true });
