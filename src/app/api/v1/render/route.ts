@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await assertUsageWithinLimit(userId);
+    await assertUsageWithinLimit(teamId);
   } catch (error) {
     const usageError = error as Error & { status?: number; payload?: unknown };
 
@@ -82,6 +82,7 @@ export async function POST(request: Request) {
     const durationMs = Math.round(performance.now() - startTime);
 
     await recordUsage({
+      teamId,
       userId,
       templateId: template.id,
       templateVersionId: currentVersion?.id,
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
     });
 
     void dispatchWebhooks({
-      userId,
+      teamId,
       event: 'render.completed',
       data: {
         templateId: template.id,
@@ -104,25 +105,13 @@ export async function POST(request: Request) {
 
     void (async () => {
       try {
-        const [summary, user] = await Promise.all([
-          getUsageSummary(userId),
-          prisma.user.findUnique({
-            where: { id: userId },
-            select: { email: true, name: true }
-          })
-        ]);
-
-        if (!user) {
-          return;
-        }
+        const summary = await getUsageSummary(teamId);
 
         await checkAndSendUsageAlerts({
-          userId,
+          teamId,
           used: summary.used,
           limit: summary.limit,
-          tier: summary.tier,
-          userEmail: user.email,
-          userName: user.name
+          tier: summary.tier
         });
       } catch (error) {
         console.error('Usage alert check failed:', error);
@@ -147,6 +136,7 @@ export async function POST(request: Request) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     await recordUsage({
+      teamId,
       userId,
       templateId: template.id,
       templateVersionId: currentVersion?.id,
@@ -157,7 +147,7 @@ export async function POST(request: Request) {
     });
 
     void dispatchWebhooks({
-      userId,
+      teamId,
       event: 'render.failed',
       data: {
         templateId: template.id,

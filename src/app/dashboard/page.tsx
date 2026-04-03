@@ -19,7 +19,6 @@ function getUsageColor(percent: number) {
 
 export default async function DashboardOverviewPage() {
   const session = await getServerSession(authOptions);
-  const userId = session!.user.id;
   const teamId = session!.user.activeTeamId;
 
   if (!teamId) {
@@ -46,7 +45,7 @@ export default async function DashboardOverviewPage() {
   }
 
   const [usage, templateCount, apiKeyCount] = await Promise.all([
-    getUsageSummary(userId),
+    getUsageSummary(teamId),
     prisma.template.count({ where: { teamId } }),
     prisma.apiKey.count({ where: { teamId } })
   ]);

@@ -128,7 +128,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   });
 
   void dispatchWebhooks({
-    userId: session.user.id,
+    teamId,
     event: 'template.updated',
     data: { templateId: existing.id, name }
   });
@@ -257,7 +257,7 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
   });
 
   void dispatchWebhooks({
-    userId: session.user.id,
+    teamId,
     event: 'template.deleted',
     data: { templateId: existing.id }
   });

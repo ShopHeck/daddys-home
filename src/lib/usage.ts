@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { getTeamTier } from '@/lib/teams';
 import type { Tier } from '@/types';
 
 export const TIER_LIMITS: Record<Tier, number> = {
@@ -20,30 +21,24 @@ export function getCurrentUsagePeriod(referenceDate = new Date()) {
   return { periodStart, periodEnd };
 }
 
-export async function getUsageSummary(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { tier: true }
-  });
-
-  if (!user) {
-    throw new Error('User not found');
-  }
-
+export async function getUsageSummary(teamId: string) {
+  const tier = await getTeamTier(teamId);
   const { periodStart, periodEnd } = getCurrentUsagePeriod();
+
   const used = await prisma.usageRecord.count({
     where: {
-      userId,
+      teamId,
       createdAt: {
         gte: periodStart,
         lte: periodEnd
       }
     }
   });
-  const limit = TIER_LIMITS[user.tier as Tier];
+
+  const limit = TIER_LIMITS[tier];
 
   return {
-    tier: user.tier,
+    tier,
     limit,
     used,
     remaining: Math.max(limit - used, 0),
@@ -52,8 +47,8 @@ export async function getUsageSummary(userId: string) {
   };
 }
 
-export async function assertUsageWithinLimit(userId: string) {
-  const summary = await getUsageSummary(userId);
+export async function assertUsageWithinLimit(teamId: string) {
+  const summary = await getUsageSummary(teamId);
 
   if (summary.used >= summary.limit) {
     const error = new Error('Usage limit exceeded') as Error & {
@@ -81,6 +76,7 @@ export async function assertUsageWithinLimit(userId: string) {
 }
 
 export async function recordUsage(params: {
+  teamId: string;
   userId: string;
   templateId?: string;
   templateVersionId?: string;
@@ -92,6 +88,7 @@ export async function recordUsage(params: {
 }) {
   return prisma.usageRecord.create({
     data: {
+      teamId: params.teamId,
       userId: params.userId,
       templateId: params.templateId,
       templateVersionId: params.templateVersionId,

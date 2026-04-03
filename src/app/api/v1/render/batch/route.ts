@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { renderPdfFromTemplate } from '@/lib/renderer';
 import { validateDataAgainstSchema, type VariableSchema } from '@/lib/template-variables';
 import { checkAndSendUsageAlerts } from '@/lib/usage-alerts';
+import { dispatchWebhooks } from '@/lib/webhooks';
+import { getTeamTier } from '@/lib/teams';
 import { getUsageSummary, recordUsage, TIER_BATCH_LIMITS } from '@/lib/usage';
 import type { BatchRenderRequestBody, BatchRenderResultItem, Tier } from '@/types';
 
@@ -60,27 +62,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { tier: true, email: true, name: true }
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const batchLimit = TIER_BATCH_LIMITS[user.tier as Tier];
+  const tier = await getTeamTier(teamId);
+  const batchLimit = TIER_BATCH_LIMITS[tier];
 
   if (body.items.length > batchLimit) {
     return NextResponse.json({
       error: 'Batch size exceeds tier limit',
       limit: batchLimit,
       requested: body.items.length,
-      tier: user.tier
+      tier
     }, { status: 400 });
   }
 
-  const summary = await getUsageSummary(userId);
+  const summary = await getUsageSummary(teamId);
 
   if (summary.remaining < body.items.length) {
     return NextResponse.json({
@@ -143,6 +137,7 @@ export async function POST(request: Request) {
 
       try {
         await recordUsage({
+          teamId,
           userId,
           templateId: template.id,
           templateVersionId: currentVersion?.id,
@@ -169,7 +164,16 @@ export async function POST(request: Request) {
 
       results.push(result);
 
-      // TODO: dispatch render.completed / render.failed webhooks when webhook system is available
+      void dispatchWebhooks({
+        teamId,
+        event: 'render.completed',
+        data: {
+          templateId: template.id,
+          durationMs,
+          fileSizeBytes: pdf.length,
+          templateVersion: template.currentVersion
+        }
+      });
     } catch (error) {
       const durationMs = Math.round(performance.now() - startTime);
       const rawMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -179,6 +183,7 @@ export async function POST(request: Request) {
 
       try {
         await recordUsage({
+          teamId,
           userId,
           templateId: template.id,
           templateVersionId: currentVersion?.id,
@@ -204,7 +209,15 @@ export async function POST(request: Request) {
 
       results.push(result);
 
-      // TODO: dispatch render.completed / render.failed webhooks when webhook system is available
+      void dispatchWebhooks({
+        teamId,
+        event: 'render.failed',
+        data: {
+          templateId: template.id,
+          durationMs,
+          errorMessage: rawMessage
+        }
+      });
     }
   });
 
@@ -212,15 +225,13 @@ export async function POST(request: Request) {
 
   void (async () => {
     try {
-      const updatedSummary = await getUsageSummary(userId);
+      const updatedSummary = await getUsageSummary(teamId);
 
       await checkAndSendUsageAlerts({
-        userId,
+        teamId,
         used: updatedSummary.used,
         limit: updatedSummary.limit,
-        tier: updatedSummary.tier,
-        userEmail: user.email,
-        userName: user.name
+        tier: updatedSummary.tier
       });
     } catch (error) {
       console.error('Usage alert check failed:', error);

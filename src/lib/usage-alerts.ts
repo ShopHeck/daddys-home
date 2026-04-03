@@ -4,14 +4,12 @@ import { usageWarningEmail, usageLimitEmail } from '@/lib/email-templates'
 import type { Tier } from '@/types'
 
 export async function checkAndSendUsageAlerts(params: {
-  userId: string
+  teamId: string
   used: number
   limit: number
   tier: Tier
-  userEmail: string
-  userName: string | null
 }) {
-  const { userId, used, limit, tier, userEmail, userName } = params
+  const { teamId, used, limit, tier } = params
 
   if (limit <= 0) {
     return
@@ -22,8 +20,20 @@ export async function checkAndSendUsageAlerts(params: {
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
   const billingUrl = `${baseUrl}/dashboard/billing`
   const usageUrl = `${baseUrl}/dashboard/usage`
-  const name = userName || 'there'
   const thresholds = [80, 100] as const
+
+  // Find the team OWNER to send the email to
+  const owner = await prisma.teamMember.findFirst({
+    where: { teamId, role: 'OWNER' },
+    include: { user: { select: { id: true, email: true, name: true } } }
+  })
+
+  if (!owner) {
+    return
+  }
+
+  const userEmail = owner.user.email
+  const name = owner.user.name || 'there'
 
   for (const threshold of thresholds) {
     if (percent < threshold) {
@@ -33,7 +43,8 @@ export async function checkAndSendUsageAlerts(params: {
     try {
       await prisma.usageAlert.create({
         data: {
-          userId,
+          teamId,
+          userId: owner.userId,
           threshold,
           period
         }

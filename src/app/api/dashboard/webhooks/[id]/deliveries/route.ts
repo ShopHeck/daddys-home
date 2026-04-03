@@ -13,6 +13,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   const url = new URL(request.url);
   const page = Math.max(parseInt(url.searchParams.get('page') ?? '1', 10), 1);
   const pageSize = Math.min(Math.max(parseInt(url.searchParams.get('pageSize') ?? '20', 10), 1), 100);
@@ -25,7 +30,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
   const payload = await listWebhookDeliveries({
     endpointId: params.id,
-    userId: session.user.id,
+    teamId,
     page,
     pageSize,
     status: normalizedStatus

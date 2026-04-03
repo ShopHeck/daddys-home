@@ -33,13 +33,13 @@ export function signPayload(payload: string, secret: string): string {
 }
 
 export async function dispatchWebhooks(params: {
-  userId: string;
+  teamId: string;
   event: WebhookEvent;
   data: Record<string, unknown>;
 }) {
   const endpoints = await prisma.webhookEndpoint.findMany({
     where: {
-      userId: params.userId,
+      teamId: params.teamId,
       active: true,
       events: {
         has: params.event
@@ -163,8 +163,8 @@ export async function deliverWebhook(deliveryId: string) {
   }
 }
 
-export async function assertWebhookLimit(userId: string, tier: Tier) {
-  const count = await prisma.webhookEndpoint.count({ where: { userId } });
+export async function assertWebhookLimit(teamId: string, tier: Tier) {
+  const count = await prisma.webhookEndpoint.count({ where: { teamId } });
   const limit = TIER_WEBHOOK_LIMITS[tier];
 
   if (count >= limit) {

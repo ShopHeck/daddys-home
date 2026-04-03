@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 
-import { getAuthenticatedUserId } from '@/lib/api-key';
+import { getAuthenticatedTeamId } from '@/lib/api-key';
 import { listWebhookDeliveries } from '@/lib/webhook-management';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const userId = getAuthenticatedUserId(request);
+  const teamId = getAuthenticatedTeamId(request);
 
-  if (!userId) {
+  if (!teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -24,7 +24,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
   const payload = await listWebhookDeliveries({
     endpointId: params.id,
-    userId,
+    teamId,
     page,
     pageSize,
     status: normalizedStatus
