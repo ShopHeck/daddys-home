@@ -8,6 +8,7 @@ import { checkAndSendUsageAlerts } from '@/lib/usage-alerts';
 import { dispatchWebhooks } from '@/lib/webhooks';
 import { getTeamTier, requireApiTeamAccess } from '@/lib/teams';
 import { getUsageSummary, recordUsage, TIER_BATCH_LIMITS } from '@/lib/usage';
+import { uploadPdf } from '@/lib/storage';
 import type { BatchRenderRequestBody, BatchRenderResultItem, Tier } from '@/types';
 
 export const runtime = 'nodejs';
@@ -140,8 +141,10 @@ export async function POST(request: Request) {
       });
       const durationMs = Math.round(performance.now() - startTime);
 
+      let record: { id: string } | undefined;
+
       try {
-        await recordUsage({
+        record = await recordUsage({
           teamId,
           userId,
           templateId: template.id,
@@ -153,6 +156,27 @@ export async function POST(request: Request) {
         });
       } catch (error) {
         console.error('Failed to record usage:', error);
+      }
+
+      // Upload PDF to storage in the background (don't block the response)
+      if (record) {
+        void (async () => {
+          try {
+            const storageKey = await uploadPdf({
+              teamId,
+              recordId: record!.id,
+              buffer: pdf,
+            });
+            if (storageKey) {
+              await prisma.usageRecord.update({
+                where: { id: record!.id },
+                data: { storageKey },
+              });
+            }
+          } catch (err) {
+            console.error('PDF storage upload failed:', err);
+          }
+        })();
       }
 
       const result: BatchRenderResultItem = {

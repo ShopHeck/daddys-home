@@ -88,6 +88,7 @@ export async function GET(request: Request) {
         durationMs: true,
         fileSizeBytes: true,
         errorMessage: true,
+        storageKey: true,
         createdAt: true,
         template: {
           select: { id: true, name: true }
@@ -121,7 +122,8 @@ export async function GET(request: Request) {
       templateId: record.template?.id ?? null,
       templateVersion: record.templateVersion?.version ?? null,
       apiKeyName: record.apiKey?.name ?? null,
-      apiKeyPrefix: record.apiKey?.keyPrefix ?? null
+      apiKeyPrefix: record.apiKey?.keyPrefix ?? null,
+      hasStoredPdf: !!record.storageKey
     })),
     pagination: {
       page,

@@ -8,6 +8,7 @@ import { checkAndSendUsageAlerts } from '@/lib/usage-alerts';
 import { requireApiTeamAccess } from '@/lib/teams';
 import { assertUsageWithinLimit, getUsageSummary, recordUsage } from '@/lib/usage';
 import { dispatchWebhooks } from '@/lib/webhooks';
+import { uploadPdf } from '@/lib/storage';
 import type { RenderRequestBody } from '@/types';
 
 export const runtime = 'nodejs';
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
     });
     const durationMs = Math.round(performance.now() - startTime);
 
-    await recordUsage({
+    const record = await recordUsage({
       teamId,
       userId,
       templateId: template.id,
@@ -97,6 +98,25 @@ export async function POST(request: Request) {
       fileSizeBytes: pdf.length,
       apiKeyId: apiKeyId ?? undefined
     });
+
+    // Upload PDF to storage in the background (don't block the response)
+    void (async () => {
+      try {
+        const storageKey = await uploadPdf({
+          teamId,
+          recordId: record.id,
+          buffer: pdf,
+        });
+        if (storageKey) {
+          await prisma.usageRecord.update({
+            where: { id: record.id },
+            data: { storageKey },
+          });
+        }
+      } catch (err) {
+        console.error('PDF storage upload failed:', err);
+      }
+    })();
 
     void dispatchWebhooks({
       teamId,
