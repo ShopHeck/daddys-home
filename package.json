@@ -11,7 +11,8 @@
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:seed": "npx tsx prisma/seed-teams.ts"
+    "prisma:seed": "npx tsx prisma/seed-teams.ts",
+    "migrate:team-ids": "npx tsx prisma/seed-team-ids.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed-teams.ts"
