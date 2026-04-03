@@ -7,6 +7,12 @@ export const TIER_LIMITS: Record<Tier, number> = {
   BUSINESS: 50000
 };
 
+export const TIER_BATCH_LIMITS: Record<Tier, number> = {
+  FREE: 5,
+  PRO: 50,
+  BUSINESS: 200
+};
+
 export function getCurrentUsagePeriod(referenceDate = new Date()) {
   const periodStart = new Date(Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth(), 1, 0, 0, 0, 0));
   const periodEnd = new Date(Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth() + 1, 0, 23, 59, 59, 999));
