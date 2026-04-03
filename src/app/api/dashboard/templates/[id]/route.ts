@@ -16,10 +16,15 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   const template = await prisma.template.findFirst({
     where: {
       id: params.id,
-      userId: session.user.id
+      teamId
     },
     select: {
       id: true,
@@ -58,10 +63,15 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: 'Name and content are required.' }, { status: 400 });
   }
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   const existing = await prisma.template.findFirst({
     where: {
       id: params.id,
-      userId: session.user.id
+      teamId
     },
     select: {
       id: true,
@@ -152,8 +162,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return NextResponse.json({ error: 'variableSchema.variables is required' }, { status: 400 });
   }
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   const existing = await prisma.template.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id: params.id, teamId },
     select: {
       id: true,
       variableSchema: true
@@ -217,10 +232,15 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   const existing = await prisma.template.findFirst({
     where: {
       id: params.id,
-      userId: session.user.id
+      teamId
     },
     select: {
       id: true,

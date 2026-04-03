@@ -13,10 +13,15 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   const existing = await prisma.apiKey.findFirst({
     where: {
       id: params.id,
-      userId: session.user.id
+      teamId
     },
     select: { id: true }
   });

@@ -20,11 +20,35 @@ function getUsageColor(percent: number) {
 export default async function DashboardOverviewPage() {
   const session = await getServerSession(authOptions);
   const userId = session!.user.id;
+  const teamId = session!.user.activeTeamId;
+
+  if (!teamId) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <p className="text-sm uppercase tracking-[0.2em] text-blue-300">Overview</p>
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white">Welcome back, {session?.user.name || 'builder'}</h1>
+          <p className="mt-2 text-sm text-slate-400">Track usage, manage templates, and keep your document pipeline healthy.</p>
+        </div>
+
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-6">
+          <h2 className="text-lg font-semibold text-amber-200">No active team selected</h2>
+          <p className="mt-2 text-sm text-amber-100/80">Please select a team from the sidebar to view your dashboard.</p>
+          <Link
+            className="mt-4 inline-block rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500"
+            href="/dashboard/teams"
+          >
+            Go to Team Settings
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const [usage, templateCount, apiKeyCount] = await Promise.all([
     getUsageSummary(userId),
-    prisma.template.count({ where: { userId } }),
-    prisma.apiKey.count({ where: { userId } })
+    prisma.template.count({ where: { teamId } }),
+    prisma.apiKey.count({ where: { teamId } })
   ]);
 
   const usagePercent = usage.limit === 0 ? 0 : Math.min((usage.used / usage.limit) * 100, 100);

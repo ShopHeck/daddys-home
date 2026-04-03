@@ -25,6 +25,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     userId: record.userId,
+    teamId: record.teamId,
     tier: record.tier,
     apiKeyId: record.apiKeyId
   });

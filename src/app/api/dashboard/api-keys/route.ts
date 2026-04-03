@@ -14,8 +14,13 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   const keys = await prisma.apiKey.findMany({
-    where: { userId: session.user.id },
+    where: { teamId },
     select: {
       id: true,
       name: true,
@@ -43,12 +48,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'API key name is required.' }, { status: 400 });
   }
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   const generated = generateApiKey();
   const keyHash = hashApiKey(generated.key);
 
   const apiKey = await prisma.apiKey.create({
     data: {
       userId: session.user.id,
+      teamId,
       name,
       keyHash,
       keyPrefix: generated.prefix

@@ -1,21 +1,22 @@
 import { NextResponse } from 'next/server';
 
-import { getAuthenticatedUserId } from '@/lib/api-key';
+import { getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
 import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const userId = getAuthenticatedUserId(request);
+  const teamId = getAuthenticatedTeamId(request);
 
-  if (!userId) {
+  if (!userId || !teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const template = await prisma.template.findFirst({
     where: {
       id: params.id,
-      userId
+      teamId
     }
   });
 
@@ -28,15 +29,16 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   const userId = getAuthenticatedUserId(request);
+  const teamId = getAuthenticatedTeamId(request);
 
-  if (!userId) {
+  if (!userId || !teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const template = await prisma.template.findFirst({
     where: {
       id: params.id,
-      userId
+      teamId
     },
     select: { id: true }
   });

@@ -16,8 +16,13 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   const templates = await prisma.template.findMany({
-    where: { userId: session.user.id },
+    where: { teamId },
     select: {
       id: true,
       name: true,
@@ -46,6 +51,11 @@ export async function POST(request: Request) {
     variableSchema?: VariableSchema | null;
   } | null;
 
+  const teamId = session.user.activeTeamId;
+  if (!teamId) {
+    return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
   if (!body?.name?.trim() || !body.content?.trim()) {
     return NextResponse.json({ error: 'Name and content are required.' }, { status: 400 });
   }
@@ -56,6 +66,7 @@ export async function POST(request: Request) {
     const createdTemplate = await tx.template.create({
       data: {
         userId: session.user.id,
+        teamId,
         name: body.name!.trim(),
         description: body.description?.trim() || null,
         content: body.content!,
