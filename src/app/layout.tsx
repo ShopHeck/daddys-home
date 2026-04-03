@@ -1,8 +1,12 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
+import { validateEnv } from '@/lib/env';
 import { AppChrome } from '@/components/AppChrome';
 import { Providers } from '@/components/Providers';
+
+// Validate env vars at startup
+validateEnv();
 
 const baseUrl = process.env.NEXTAUTH_URL || 'https://docforge.app';
 
