@@ -37,6 +37,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
       name: true,
       description: true,
       content: true,
+      css: true,
       variableSchema: true,
       currentVersion: true,
       createdAt: true,
@@ -62,6 +63,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     name?: string;
     description?: string;
     content?: string;
+    css?: string;
     variableSchema?: VariableSchema | null;
   } | null;
 
@@ -107,6 +109,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         name,
         description,
         content,
+        css: body.css?.trim() || null,
         variableSchema: schema as any
       },
       select: {
@@ -127,6 +130,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         name,
         description,
         content,
+        css: body.css?.trim() || null,
         variableSchema: schema
       },
       tx

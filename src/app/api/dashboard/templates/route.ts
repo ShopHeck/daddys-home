@@ -54,6 +54,7 @@ export async function POST(request: Request) {
     name?: string;
     description?: string;
     content?: string;
+    css?: string;
     variableSchema?: VariableSchema | null;
   } | null;
 
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
         name: body.name!.trim(),
         description: body.description?.trim() || null,
         content: body.content!,
+        css: body.css?.trim() || null,
         variableSchema: schema as any
       },
       select: {
@@ -100,6 +102,7 @@ export async function POST(request: Request) {
         name: body.name!.trim(),
         description: body.description?.trim() || null,
         content: body.content!,
+        css: body.css?.trim() || null,
         variableSchema: schema
       },
       tx

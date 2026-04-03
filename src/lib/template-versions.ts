@@ -12,6 +12,7 @@ async function createTemplateVersionWithClient(
     name: string;
     description: string | null;
     content: string;
+    css?: string | null;
     variableSchema?: VariableSchema | null;
   }
 ) {
@@ -29,6 +30,7 @@ async function createTemplateVersionWithClient(
       name: params.name,
       description: params.description,
       content: params.content,
+      css: params.css ?? null,
       variableSchema: params.variableSchema as any
     }
   });
@@ -47,6 +49,7 @@ export async function createTemplateVersion(
     name: string;
     description: string | null;
     content: string;
+    css?: string | null;
     variableSchema?: VariableSchema | null;
   },
   tx?: DbClient
@@ -64,6 +67,7 @@ export async function createInitialVersion(
     name: string;
     description: string | null;
     content: string;
+    css?: string | null;
     variableSchema?: VariableSchema | null;
   },
   tx?: DbClient
@@ -77,6 +81,7 @@ export async function createInitialVersion(
       name: params.name,
       description: params.description,
       content: params.content,
+      css: params.css ?? null,
       variableSchema: params.variableSchema as any
     }
   });

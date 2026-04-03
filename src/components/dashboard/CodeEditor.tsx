@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 type CodeEditorProps = {
   value: string;
   onChange: (value: string) => void;
-  language: 'html' | 'json';
+  language: 'html' | 'json' | 'css';
   className?: string;
   placeholder?: string;
 };
@@ -32,12 +32,13 @@ export function CodeEditor({ value, onChange, language, className, placeholder }
     let disposed = false;
 
     void (async () => {
-      const [{ EditorView, basicSetup }, { EditorState }, { oneDark }, { html }, { json }, { placeholder: placeholderExtension }] = await Promise.all([
+      const [{ EditorView, basicSetup }, { EditorState }, { oneDark }, { html }, { json }, { css: cssLang }, { placeholder: placeholderExtension }] = await Promise.all([
         import('codemirror'),
         import('@codemirror/state'),
         import('@codemirror/theme-one-dark'),
         import('@codemirror/lang-html'),
         import('@codemirror/lang-json'),
+        import('@codemirror/lang-css'),
         import('@codemirror/view')
       ]);
 
@@ -99,7 +100,7 @@ export function CodeEditor({ value, onChange, language, className, placeholder }
           oneDark,
           docforgeTheme,
           EditorState.tabSize.of(2),
-          language === 'html' ? html() : json(),
+          language === 'html' ? html() : language === 'css' ? cssLang() : json(),
           placeholder ? placeholderExtension(placeholder) : [],
           EditorView.updateListener.of((update) => {
             if (!update.docChanged) {

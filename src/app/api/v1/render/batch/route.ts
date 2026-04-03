@@ -100,6 +100,7 @@ export async function POST(request: Request) {
     select: {
       id: true,
       content: true,
+      css: true,
       currentVersion: true,
       variableSchema: true
     }
@@ -136,7 +137,8 @@ export async function POST(request: Request) {
       const pdf = await renderPdfFromTemplate({
         template: template.content,
         data: item.data,
-        options: item.options
+        options: item.options,
+        css: template.css ?? undefined
       });
       const durationMs = Math.round(performance.now() - startTime);
 
