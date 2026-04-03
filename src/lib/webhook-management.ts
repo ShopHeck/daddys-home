@@ -44,7 +44,7 @@ export function isValidWebhookUrl(value: string): boolean {
       return true;
     }
 
-    return url.protocol === 'http:' && value.startsWith('http://localhost');
+    return url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1');
   } catch {
     return false;
   }
