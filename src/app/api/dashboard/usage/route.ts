@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { requireTeamAccess } from '@/lib/teams';
 import { getUsageSummary } from '@/lib/usage';
 
 export const runtime = 'nodejs';
@@ -17,6 +18,11 @@ export async function GET() {
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const summary = await getUsageSummary(teamId);

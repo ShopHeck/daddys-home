@@ -8,7 +8,7 @@ import {
   listWebhookEndpoints,
   parseWebhookEvents
 } from '@/lib/webhook-management';
-import { getTeamTier } from '@/lib/teams';
+import { getTeamTier, requireTeamAccess } from '@/lib/teams';
 
 export const runtime = 'nodejs';
 
@@ -22,6 +22,11 @@ export async function GET() {
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const endpoints = await listWebhookEndpoints(teamId);
@@ -39,6 +44,11 @@ export async function POST(request: Request) {
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const body = (await request.json().catch(() => null)) as {

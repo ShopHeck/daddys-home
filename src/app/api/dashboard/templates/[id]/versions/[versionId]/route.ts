@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { requireTeamAccess } from '@/lib/teams';
 import type { VariableSchema } from '@/lib/template-variables';
 import { createTemplateVersion } from '@/lib/template-versions';
 
@@ -18,6 +19,11 @@ export async function GET(_: Request, { params }: { params: { id: string; versio
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const template = await prisma.template.findFirst({
@@ -61,6 +67,11 @@ export async function POST(_: Request, { params }: { params: { id: string; versi
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const template = await prisma.template.findFirst({

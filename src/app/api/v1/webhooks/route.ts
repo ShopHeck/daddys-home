@@ -7,15 +7,21 @@ import {
   listWebhookEndpoints,
   parseWebhookEvents
 } from '@/lib/webhook-management';
-import { getTeamTier } from '@/lib/teams';
+import { getTeamTier, requireApiTeamAccess } from '@/lib/teams';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
+  const userId = getAuthenticatedUserId(request);
   const teamId = getAuthenticatedTeamId(request);
 
-  if (!teamId) {
+  if (!userId || !teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const hasAccess = await requireApiTeamAccess(teamId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
   }
 
   const endpoints = await listWebhookEndpoints(teamId);
@@ -24,11 +30,16 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const teamId = getAuthenticatedTeamId(request);
   const userId = getAuthenticatedUserId(request);
+  const teamId = getAuthenticatedTeamId(request);
 
-  if (!teamId || !userId) {
+  if (!userId || !teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const hasAccess = await requireApiTeamAccess(teamId, userId, ['OWNER', 'ADMIN']);
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
   }
 
   const body = (await request.json().catch(() => null)) as {
