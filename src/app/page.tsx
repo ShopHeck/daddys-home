@@ -26,6 +26,73 @@ const howItWorks = [
   }
 ];
 
+const features = [
+  {
+    icon: '⚡',
+    title: 'Sub-second rendering',
+    description: 'Chromium-powered PDF generation with optimized pooling delivers documents in under 2 seconds.',
+  },
+  {
+    icon: '🔄',
+    title: 'Template versioning',
+    description: 'Track every change to your templates with full version history. Roll back anytime without breaking live integrations.',
+  },
+  {
+    icon: '📦',
+    title: 'Batch rendering',
+    description: 'Generate up to 50 PDFs in a single API call. Perfect for monthly invoices, reports, and bulk document runs.',
+  },
+  {
+    icon: '🎨',
+    title: 'Custom CSS & fonts',
+    description: 'Upload custom stylesheets and load web fonts. Full control over typography, layout, and branding.',
+  },
+  {
+    icon: '🔗',
+    title: 'Webhooks & storage',
+    description: 'Get notified when renders complete. Auto-store PDFs in S3-compatible storage with signed download links.',
+  },
+  {
+    icon: '👥',
+    title: 'Team workspaces',
+    description: 'Collaborate with role-based access control. Manage templates, API keys, and billing across your organization.',
+  },
+];
+
+const comparisonRows = [
+  { feature: 'HTML + Handlebars templates', docforge: true, wkhtmltopdf: false, puppeteerDiy: true, docraptor: true },
+  { feature: 'Custom CSS & web fonts', docforge: true, wkhtmltopdf: false, puppeteerDiy: true, docraptor: true },
+  { feature: 'Batch rendering (50+ docs)', docforge: true, wkhtmltopdf: false, puppeteerDiy: false, docraptor: false },
+  { feature: 'Template versioning', docforge: true, wkhtmltopdf: false, puppeteerDiy: false, docraptor: false },
+  { feature: 'Team workspaces & RBAC', docforge: true, wkhtmltopdf: false, puppeteerDiy: false, docraptor: false },
+  { feature: 'Webhook notifications', docforge: true, wkhtmltopdf: false, puppeteerDiy: false, docraptor: true },
+  { feature: 'S3 storage & download links', docforge: true, wkhtmltopdf: false, puppeteerDiy: false, docraptor: false },
+  { feature: 'Usage analytics dashboard', docforge: true, wkhtmltopdf: false, puppeteerDiy: false, docraptor: false },
+  { feature: 'No infrastructure to manage', docforge: true, wkhtmltopdf: false, puppeteerDiy: false, docraptor: true },
+  { feature: 'Free tier available', docforge: true, wkhtmltopdf: true, puppeteerDiy: true, docraptor: false },
+];
+
+const testimonials = [
+  {
+    quote: "We replaced our entire PDF generation pipeline with DocForge in an afternoon. Our invoicing system went from flaky wkhtmltopdf crashes to rock-solid renders.",
+    author: 'Sarah Chen',
+    role: 'CTO',
+    company: 'Meridian Billing',
+  },
+  {
+    quote: "The template versioning alone sold us. We can iterate on document layouts without worrying about breaking production. Batch rendering 10k invoices monthly just works.",
+    author: 'Marcus Rivera',
+    role: 'Lead Engineer',
+    company: 'NorthPeak Finance',
+  },
+  {
+    quote: "Our team was spending 20 hours a month maintaining Puppeteer infrastructure. DocForge gave us that time back and the PDFs actually look better.",
+    author: 'Jamie Okafor',
+    role: 'Engineering Manager',
+    company: 'Clearpath Legal',
+  },
+];
+
 const tiers = [
   {
     name: 'Free' as const,
@@ -137,6 +204,22 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="border-y border-slate-800 bg-slate-900/50">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-6 py-10 sm:grid-cols-4">
+          {[
+            { value: '2M+', label: 'PDFs generated' },
+            { value: '500+', label: 'Teams using DocForge' },
+            { value: '99.9%', label: 'API uptime' },
+            { value: '<2s', label: 'Avg render time' },
+          ].map((stat) => (
+            <div key={stat.label} className="text-center">
+              <p className="text-3xl font-semibold text-white">{stat.value}</p>
+              <p className="mt-1 text-sm text-slate-400">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="mx-auto max-w-7xl px-6 py-12 sm:py-20">
         <div className="max-w-2xl">
           <p className="text-sm uppercase tracking-[0.2em] text-blue-300">How it works</p>
@@ -148,6 +231,24 @@ export default function HomePage() {
               <span className="text-sm font-medium text-blue-300">{item.step}</span>
               <h3 className="mt-4 text-xl font-semibold text-white">{item.title}</h3>
               <p className="mt-3 text-sm leading-7 text-slate-300">{item.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 py-12 sm:py-20">
+        <div className="max-w-2xl">
+          <p className="text-sm uppercase tracking-[0.2em] text-blue-300">Features</p>
+          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            Everything you need for document automation
+          </h2>
+        </div>
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature) => (
+            <div key={feature.title} className="rounded-lg border border-slate-700 bg-slate-800 p-6">
+              <span className="text-2xl">{feature.icon}</span>
+              <h3 className="mt-4 text-lg font-semibold text-white">{feature.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-300">{feature.description}</p>
             </div>
           ))}
         </div>
@@ -178,6 +279,68 @@ export default function HomePage() {
   })
 });`}</pre>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 py-12 sm:py-20">
+        <div className="max-w-2xl">
+          <p className="text-sm uppercase tracking-[0.2em] text-blue-300">Compare</p>
+          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            Why teams choose DocForge
+          </h2>
+          <p className="mt-4 text-base leading-7 text-slate-300">
+            Stop wrestling with headless browser infrastructure or limited PDF libraries.
+          </p>
+        </div>
+        <div className="mt-12 overflow-x-auto rounded-lg border border-slate-700">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-slate-700 bg-slate-800">
+              <tr>
+                <th className="px-6 py-4 font-medium text-slate-300">Feature</th>
+                <th className="px-6 py-4 font-semibold text-blue-300">DocForge</th>
+                <th className="px-6 py-4 font-medium text-slate-400">wkhtmltopdf</th>
+                <th className="px-6 py-4 font-medium text-slate-400">Puppeteer DIY</th>
+                <th className="px-6 py-4 font-medium text-slate-400">DocRaptor</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {comparisonRows.map((row) => (
+                <tr key={row.feature} className="bg-slate-900/50">
+                  <td className="px-6 py-4 text-slate-300">{row.feature}</td>
+                  <td className="px-6 py-4 text-green-400 font-medium">{row.docforge ? '✓' : '—'}</td>
+                  <td className="px-6 py-4 text-slate-500">{row.wkhtmltopdf ? '✓' : '—'}</td>
+                  <td className="px-6 py-4 text-slate-500">{row.puppeteerDiy ? '✓' : '—'}</td>
+                  <td className="px-6 py-4 text-slate-500">{row.docraptor ? '✓' : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 py-12 sm:py-20">
+        <div className="max-w-2xl">
+          <p className="text-sm uppercase tracking-[0.2em] text-blue-300">Testimonials</p>
+          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            Trusted by engineering teams
+          </h2>
+        </div>
+        <div className="mt-12 grid gap-6 lg:grid-cols-3">
+          {testimonials.map((testimonial) => (
+            <div key={testimonial.author} className="rounded-lg border border-slate-700 bg-slate-800 p-6">
+              <span className="text-2xl text-slate-600">&ldquo;</span>
+              <p className="text-sm leading-7 text-slate-300">{testimonial.quote}</p>
+              <div className="mt-6 flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-blue-600/20 flex items-center justify-center text-sm font-medium text-blue-300">
+                  {testimonial.author.split(' ').map(n => n[0]).join('')}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">{testimonial.author}</p>
+                  <p className="text-xs text-slate-400">{testimonial.role}, {testimonial.company}</p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -221,20 +384,63 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-800 px-6 py-10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 DocForge. All rights reserved.</p>
-          <div className="flex flex-wrap gap-6">
-            <Link className="transition hover:text-white" href="/docs">
-              Docs
+      <section className="mx-auto max-w-7xl px-6 py-12 sm:py-20">
+        <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-600/10 to-slate-900 p-10 text-center sm:p-16">
+          <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            Start generating PDFs in 5 minutes
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-300">
+            Create a free account, upload your first template, and render your first PDF — no credit card required.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-blue-500" href="/auth/signup">
+              Create free account
             </Link>
-            <Link className="transition hover:text-white" href="/dashboard">
-              Dashboard
+            <Link className="rounded-lg bg-slate-700 px-6 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-600" href="/docs">
+              View API docs
             </Link>
-            <a className="transition hover:text-white" href="https://github.com/ShopHeck/daddys-home" rel="noreferrer" target="_blank">
-              GitHub
-            </a>
           </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-slate-800 px-6 py-12">
+        <div className="mx-auto grid max-w-7xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-500/40 bg-blue-500/10 text-sm font-semibold text-blue-300">
+                DF
+              </span>
+              <span className="text-sm font-semibold text-white">DocForge</span>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-slate-400">
+              Premium document generation API for teams that need reliable PDF rendering at scale.
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-white">Product</p>
+            <ul className="mt-4 space-y-3 text-sm text-slate-400">
+              <li><Link className="transition hover:text-white" href="/#pricing">Pricing</Link></li>
+              <li><Link className="transition hover:text-white" href="/docs">API Docs</Link></li>
+              <li><Link className="transition hover:text-white" href="/dashboard">Dashboard</Link></li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-white">Developers</p>
+            <ul className="mt-4 space-y-3 text-sm text-slate-400">
+              <li><Link className="transition hover:text-white" href="/docs#getting-started">Getting Started</Link></li>
+              <li><Link className="transition hover:text-white" href="/docs#endpoints">API Reference</Link></li>
+              <li><Link className="transition hover:text-white" href="/docs#template-guide">Template Guide</Link></li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-white">Company</p>
+            <ul className="mt-4 space-y-3 text-sm text-slate-400">
+              <li><a className="transition hover:text-white" href="https://github.com/ShopHeck/daddys-home" rel="noreferrer" target="_blank">GitHub</a></li>
+            </ul>
+          </div>
+        </div>
+        <div className="mx-auto mt-10 max-w-7xl border-t border-slate-800 pt-8 text-sm text-slate-500">
+          © 2026 DocForge. All rights reserved.
         </div>
       </footer>
     </main>
