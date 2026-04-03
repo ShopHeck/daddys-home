@@ -21,6 +21,27 @@ export type RenderRequestBody = {
   validateSchema?: boolean;
 };
 
+export type BatchRenderItem = {
+  data: Record<string, unknown>;
+  options?: RenderOptions;
+};
+
+export type BatchRenderRequestBody = {
+  templateId: string;
+  items: BatchRenderItem[];
+  validateSchema?: boolean;
+};
+
+export type BatchRenderResultItem = {
+  index: number;
+  status: 'SUCCESS' | 'FAILED';
+  pdf?: string;
+  error?: string;
+  durationMs: number;
+  fileSizeBytes?: number;
+  schemaWarnings?: Array<{ path: string; message: string; severity: 'warning' }>;
+};
+
 declare module 'next-auth' {
   interface Session {
     user: {
