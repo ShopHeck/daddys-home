@@ -164,3 +164,25 @@ export function paymentConfirmationEmail(params: {
     }
   })
 }
+
+export function teamInviteEmail(params: {
+  inviterName: string;
+  teamName: string;
+  role: string;
+  acceptUrl: string;
+}): string {
+  return createEmailShell({
+    preview: `You've been invited to join ${params.teamName} on DocForge.`,
+    title: `Join ${params.teamName}`,
+    body: `
+      <p style="margin: 0 0 12px;">Hi there,</p>
+      <p style="margin: 0 0 12px;">${params.inviterName} invited you to join <strong>${params.teamName}</strong> as a ${params.role.toLowerCase()} on DocForge.</p>
+      <p style="margin: 0;">Click below to accept the invitation.</p>
+    `,
+    primaryCta: {
+      label: 'Accept Invitation',
+      href: params.acceptUrl
+    },
+    footerNote: 'This invitation expires in 7 days. If you don\'t have a DocForge account yet, you\'ll need to sign up first.'
+  })
+}
