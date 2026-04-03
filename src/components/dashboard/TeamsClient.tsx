@@ -67,7 +67,11 @@ function getInitials(name: string | null, email: string | null) {
   return email?.slice(0, 2).toUpperCase() || "?";
 }
 
-export function TeamsClient() {
+type TeamsClientProps = {
+  currentUserId: string;
+};
+
+export function TeamsClient({ currentUserId }: TeamsClientProps) {
   const [teams, setTeams] = useState<TeamListItem[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
@@ -562,7 +566,7 @@ export function TeamsClient() {
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            {selectedTeam.myRole === "OWNER" && member.userId !== member.userId ? (
+                            {selectedTeam.myRole === "OWNER" && member.userId !== currentUserId ? (
                               <select
                                 value={member.role}
                                 onChange={(e) =>

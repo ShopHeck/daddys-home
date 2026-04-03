@@ -153,6 +153,12 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: 'Cannot delete personal workspace.' }, { status: 400 });
   }
 
+  // Clear activeTeamId for all members before deleting
+  await prisma.user.updateMany({
+    where: { activeTeamId: params.id },
+    data: { activeTeamId: null }
+  });
+
   await prisma.team.delete({ where: { id: params.id } });
 
   return NextResponse.json({ success: true });

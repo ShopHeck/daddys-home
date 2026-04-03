@@ -1,5 +1,11 @@
-import { TeamsClient } from "@/components/dashboard/TeamsClient";
+import { getServerSession } from "next-auth";
 
-export default function TeamsPage() {
-  return <TeamsClient />;
+import { TeamsClient } from "@/components/dashboard/TeamsClient";
+import { authOptions } from "@/lib/auth";
+
+export default async function TeamsPage() {
+  const session = await getServerSession(authOptions);
+  const currentUserId = session?.user?.id ?? "";
+
+  return <TeamsClient currentUserId={currentUserId} />;
 }

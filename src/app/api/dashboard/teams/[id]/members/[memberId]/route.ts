@@ -32,9 +32,9 @@ export async function PATCH(
     return NextResponse.json({ error: 'Valid role is required.' }, { status: 400 });
   }
 
-  // Find the target member
-  const targetMember = await prisma.teamMember.findUnique({
-    where: { id: params.memberId },
+  // Find the target member (must belong to this team)
+  const targetMember = await prisma.teamMember.findFirst({
+    where: { id: params.memberId, teamId: params.id },
     select: { id: true, userId: true, role: true }
   });
 
