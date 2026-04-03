@@ -5,7 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { renderPdfFromTemplate } from '@/lib/renderer';
 import { validateDataAgainstSchema, type VariableSchema } from '@/lib/template-variables';
 import { checkAndSendUsageAlerts } from '@/lib/usage-alerts';
-import { getUsageSummary, recordUsage, assertUsageWithinLimit } from '@/lib/usage';
+import { assertUsageWithinLimit, getUsageSummary, recordUsage } from '@/lib/usage';
+import { dispatchWebhooks } from '@/lib/webhooks';
 import type { RenderRequestBody } from '@/types';
 
 export const runtime = 'nodejs';
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => null) as RenderRequestBody | null;
+  const body = (await request.json().catch(() => null)) as RenderRequestBody | null;
 
   if (!body?.templateId || !body.data || typeof body.data !== 'object' || Array.isArray(body.data)) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
@@ -89,6 +90,17 @@ export async function POST(request: Request) {
       apiKeyId: apiKeyId ?? undefined
     });
 
+    void dispatchWebhooks({
+      userId,
+      event: 'render.completed',
+      data: {
+        templateId: template.id,
+        durationMs,
+        fileSizeBytes: pdf.length,
+        templateVersion: template.currentVersion
+      }
+    });
+
     void (async () => {
       try {
         const [summary, user] = await Promise.all([
@@ -141,6 +153,16 @@ export async function POST(request: Request) {
       durationMs,
       errorMessage,
       apiKeyId: apiKeyId ?? undefined
+    });
+
+    void dispatchWebhooks({
+      userId,
+      event: 'render.failed',
+      data: {
+        templateId: template.id,
+        durationMs,
+        errorMessage
+      }
     });
 
     if (error instanceof Error && /(Parse error|Expecting|got)/i.test(error.message)) {

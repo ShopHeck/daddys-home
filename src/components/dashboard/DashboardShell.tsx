@@ -19,6 +19,7 @@ const navigation = [
   { href: '/dashboard/api-keys', label: 'API Keys' },
   { href: '/dashboard/usage', label: 'Usage' },
   { href: '/dashboard/render-history', label: 'Render History' },
+  { href: '/dashboard/webhooks', label: 'Webhooks' },
   {
     href: '/dashboard/billing',
     label: 'Billing',
