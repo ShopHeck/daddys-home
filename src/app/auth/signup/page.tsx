@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Sign Up',
+  description: 'Create a free DocForge account. Start generating PDFs from HTML templates in minutes.',
+};
+
 "use client";
 
 import Link from 'next/link';

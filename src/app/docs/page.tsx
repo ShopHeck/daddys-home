@@ -1,4 +1,10 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'API Documentation',
+  description: 'Complete API reference for DocForge. Learn how to create templates, render PDFs, manage usage, and integrate document generation into your application.',
+};
 
 const endpoints = [
   {

@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Sign In',
+  robots: { index: false },
+};
+
 "use client";
 
 import Link from 'next/link';

@@ -1,6 +1,12 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { PricingPlanButton } from '@/components/landing/PricingPlanButton';
+
+export const metadata: Metadata = {
+  title: 'DocForge — Generate PDFs from HTML Templates via API',
+  description: 'DocForge gives your product team a fast, reliable document pipeline for invoices, proposals, and branded PDFs without managing rendering infrastructure.',
+};
 
 const howItWorks = [
   {
@@ -56,8 +62,43 @@ const codeExample = `curl -X POST https://api.docforge.app/api/v1/render \
   --output invoice.pdf`;
 
 export default function HomePage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'DocForge',
+    applicationCategory: 'DeveloperApplication',
+    description: 'Premium document generation API for HTML and Handlebars templates.',
+    url: 'https://docforge.app',
+    offers: [
+      {
+        '@type': 'Offer',
+        name: 'Free',
+        price: '0',
+        priceCurrency: 'USD',
+      },
+      {
+        '@type': 'Offer',
+        name: 'Pro',
+        price: '29',
+        priceCurrency: 'USD',
+        billingIncrement: 'P1M',
+      },
+      {
+        '@type': 'Offer',
+        name: 'Business',
+        price: '99',
+        priceCurrency: 'USD',
+        billingIncrement: 'P1M',
+      },
+    ],
+  };
+
   return (
     <main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <section className="relative overflow-hidden px-6 py-24 sm:py-32">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.2),transparent_45%)]" />
         <div className="relative mx-auto flex max-w-7xl flex-col gap-16 lg:flex-row lg:items-center lg:justify-between">
