@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
 import { prisma } from '@/lib/prisma';
+import { requireApiTeamAccess } from '@/lib/teams';
 
 export const runtime = 'nodejs';
 
@@ -11,6 +12,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
   if (!userId || !teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const hasAccess = await requireApiTeamAccess(teamId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
   }
 
   const template = await prisma.template.findFirst({
@@ -33,6 +39,11 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
   if (!userId || !teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const hasAccess = await requireApiTeamAccess(teamId, userId, ['OWNER', 'ADMIN']);
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
   }
 
   const template = await prisma.template.findFirst({

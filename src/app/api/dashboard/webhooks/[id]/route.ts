@@ -9,6 +9,7 @@ import {
   parseWebhookEvents,
   updateWebhookEndpoint
 } from '@/lib/webhook-management';
+import { requireTeamAccess } from '@/lib/teams';
 import type { WebhookEvent } from '@/types';
 
 export const runtime = 'nodejs';
@@ -23,6 +24,11 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const endpoint = await getWebhookEndpoint(params.id, teamId);
@@ -44,6 +50,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const body = (await request.json().catch(() => null)) as {
@@ -108,6 +119,11 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const deleted = await deleteWebhookEndpoint(params.id, teamId);

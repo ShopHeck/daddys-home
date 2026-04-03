@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
 
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -20,6 +21,18 @@ function getUsageColor(percent: number) {
 export default async function DashboardOverviewPage() {
   const session = await getServerSession(authOptions);
   const teamId = session!.user.activeTeamId;
+
+  if (teamId) {
+    // Verify membership (any role is fine for viewing overview)
+    const member = await prisma.teamMember.findUnique({
+      where: { teamId_userId: { teamId, userId: session!.user.id } }
+    });
+    if (!member) {
+      // User's activeTeamId points to a team they're not a member of
+      // This can happen if they were removed — show fallback
+      redirect('/dashboard/teams');
+    }
+  }
 
   if (!teamId) {
     return (

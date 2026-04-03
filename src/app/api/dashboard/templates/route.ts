@@ -6,6 +6,7 @@ import { dispatchWebhooks } from '@/lib/webhooks';
 import { prisma } from '@/lib/prisma';
 import { extractVariables, mergeSchemas, type VariableSchema } from '@/lib/template-variables';
 import { createInitialVersion } from '@/lib/template-versions';
+import { requireTeamAccess } from '@/lib/teams';
 
 export const runtime = 'nodejs';
 
@@ -19,6 +20,11 @@ export async function GET() {
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const templates = await prisma.template.findMany({
@@ -54,6 +60,11 @@ export async function POST(request: Request) {
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   if (!body?.name?.trim() || !body.content?.trim()) {

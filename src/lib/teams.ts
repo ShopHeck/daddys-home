@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import type { Tier } from '@/types';
-import type { TeamRole } from '@prisma/client';
+import type { TeamMember, TeamRole } from '@prisma/client';
 
 export async function getTeamMembership(teamId: string, userId: string) {
   return prisma.teamMember.findUnique({
@@ -14,6 +14,47 @@ export async function requireTeamRole(teamId: string, userId: string, roles: Tea
     return null;
   }
   return member;
+}
+
+export type TeamMemberWithRole = Pick<TeamMember, 'id' | 'role' | 'userId' | 'teamId'>;
+
+/**
+ * Verify user is a member of the team with one of the required roles.
+ * Returns the membership if authorized, null otherwise.
+ *
+ * Usage in dashboard routes:
+ *   const member = await requireTeamAccess(teamId, session.user.id, ['ADMIN', 'OWNER']);
+ *   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+ */
+export async function requireTeamAccess(
+  teamId: string,
+  userId: string,
+  roles: TeamRole[]
+): Promise<TeamMemberWithRole | null> {
+  const member = await prisma.teamMember.findUnique({
+    where: { teamId_userId: { teamId, userId } },
+    select: { id: true, role: true, userId: true, teamId: true }
+  });
+  if (!member || !roles.includes(member.role)) {
+    return null;
+  }
+  return member;
+}
+
+/**
+ * For v1 API routes: verify the API key user is a member of the API key's team
+ * with the required role. The userId comes from x-user-id, teamId from x-team-id.
+ */
+export async function requireApiTeamAccess(
+  teamId: string,
+  userId: string,
+  roles: TeamRole[]
+): Promise<boolean> {
+  const member = await prisma.teamMember.findUnique({
+    where: { teamId_userId: { teamId, userId } },
+    select: { role: true }
+  });
+  return !!member && roles.includes(member.role);
 }
 
 export async function getUserTeams(userId: string) {

@@ -6,6 +6,7 @@ import { dispatchWebhooks } from '@/lib/webhooks';
 import { prisma } from '@/lib/prisma';
 import { extractVariables, mergeSchemas, type VariableSchema } from '@/lib/template-variables';
 import { createTemplateVersion } from '@/lib/template-versions';
+import { requireTeamAccess } from '@/lib/teams';
 
 export const runtime = 'nodejs';
 
@@ -19,6 +20,11 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const template = await prisma.template.findFirst({
@@ -66,6 +72,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const existing = await prisma.template.findFirst({
@@ -167,6 +178,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
   }
 
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const existing = await prisma.template.findFirst({
     where: { id: params.id, teamId },
     select: {
@@ -235,6 +251,11 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const existing = await prisma.template.findFirst({

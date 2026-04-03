@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
 
-import { getAuthenticatedTeamId } from '@/lib/api-key';
+import { getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
 import { listWebhookDeliveries } from '@/lib/webhook-management';
+import { requireApiTeamAccess } from '@/lib/teams';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
+  const userId = getAuthenticatedUserId(request);
   const teamId = getAuthenticatedTeamId(request);
 
-  if (!teamId) {
+  if (!userId || !teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const hasAccess = await requireApiTeamAccess(teamId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
   }
 
   const url = new URL(request.url);

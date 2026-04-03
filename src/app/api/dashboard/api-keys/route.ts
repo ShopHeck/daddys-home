@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { generateApiKey, hashApiKey } from '@/lib/api-key';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { requireTeamAccess } from '@/lib/teams';
 
 export const runtime = 'nodejs';
 
@@ -17,6 +18,11 @@ export async function GET() {
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const keys = await prisma.apiKey.findMany({
@@ -51,6 +57,11 @@ export async function POST(request: Request) {
   const teamId = session.user.activeTeamId;
   if (!teamId) {
     return NextResponse.json({ error: 'No active team. Please select a team.' }, { status: 400 });
+  }
+
+  const member = await requireTeamAccess(teamId, session.user.id, ['OWNER', 'ADMIN']);
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const generated = generateApiKey();

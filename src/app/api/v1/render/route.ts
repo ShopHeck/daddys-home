@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { renderPdfFromTemplate } from '@/lib/renderer';
 import { validateDataAgainstSchema, type VariableSchema } from '@/lib/template-variables';
 import { checkAndSendUsageAlerts } from '@/lib/usage-alerts';
+import { requireApiTeamAccess } from '@/lib/teams';
 import { assertUsageWithinLimit, getUsageSummary, recordUsage } from '@/lib/usage';
 import { dispatchWebhooks } from '@/lib/webhooks';
 import type { RenderRequestBody } from '@/types';
@@ -18,6 +19,11 @@ export async function POST(request: Request) {
 
   if (!userId || !teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const hasAccess = await requireApiTeamAccess(teamId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
   }
 
   const body = (await request.json().catch(() => null)) as RenderRequestBody | null;
