@@ -140,15 +140,19 @@ export async function POST(request: Request) {
       });
       const durationMs = Math.round(performance.now() - startTime);
 
-      await recordUsage({
-        userId,
-        templateId: template.id,
-        templateVersionId: currentVersion?.id,
-        status: 'SUCCESS',
-        durationMs,
-        fileSizeBytes: pdf.length,
-        apiKeyId: apiKeyId ?? undefined
-      });
+      try {
+        await recordUsage({
+          userId,
+          templateId: template.id,
+          templateVersionId: currentVersion?.id,
+          status: 'SUCCESS',
+          durationMs,
+          fileSizeBytes: pdf.length,
+          apiKeyId: apiKeyId ?? undefined
+        });
+      } catch (error) {
+        console.error('Failed to record usage:', error);
+      }
 
       const result: BatchRenderResultItem = {
         index,
@@ -167,17 +171,24 @@ export async function POST(request: Request) {
       // TODO: dispatch render.completed / render.failed webhooks when webhook system is available
     } catch (error) {
       const durationMs = Math.round(performance.now() - startTime);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const rawMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error && /(Parse error|Expecting|got)/i.test(error.message)
+        ? 'Invalid template data'
+        : 'Render failed';
 
-      await recordUsage({
-        userId,
-        templateId: template.id,
-        templateVersionId: currentVersion?.id,
-        status: 'FAILED',
-        durationMs,
-        errorMessage,
-        apiKeyId: apiKeyId ?? undefined
-      });
+      try {
+        await recordUsage({
+          userId,
+          templateId: template.id,
+          templateVersionId: currentVersion?.id,
+          status: 'FAILED',
+          durationMs,
+          errorMessage: rawMessage,
+          apiKeyId: apiKeyId ?? undefined
+        });
+      } catch (recordUsageError) {
+        console.error('Failed to record usage:', recordUsageError);
+      }
 
       const result: BatchRenderResultItem = {
         index,
