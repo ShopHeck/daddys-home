@@ -51,10 +51,10 @@ const BLOCKED_HOSTNAME_PATTERNS: RegExp[] = [
   /^169\.254\.\d+\.\d+$/,
   // IPv6 loopback
   /^::1$/,
-  // IPv6 ULA (fc00::/7) — first byte is fc or fd, then any hex and colons
-  /^f[cd][0-9a-f]{0,2}:[0-9a-f:]*$/i,
-  // IPv6 link-local (fe80::/10) — first byte fe, second nibble 8–b
-  /^fe[89ab][0-9a-f]?:[0-9a-f:]*$/i,
+  // IPv6 ULA (fc00::/7) — first byte is fc or fd followed by exactly 2 more hex digits
+  /^f[cd][0-9a-f]{2}:[0-9a-f:]*$/i,
+  // IPv6 link-local (fe80::/10) — first byte fe, second nibble 8–b, then 1 required hex digit
+  /^fe[89ab][0-9a-f]:[0-9a-f:]*$/i,
 ];
 
 function isBlockedHostname(hostname: string): boolean {
