@@ -16,7 +16,11 @@ function getClientIp(request: NextRequest): string {
   const forwardedFor = request.headers.get('x-forwarded-for');
 
   if (forwardedFor) {
-    const clientIp = forwardedFor.split(',')[0]?.trim();
+    // When the app is behind a trusted reverse proxy (e.g. Nginx, Cloudflare),
+    // the proxy appends the real client IP so we take the LAST entry to avoid
+    // IP-spoofing via a client-controlled x-forwarded-for header.
+    const parts = forwardedFor.split(',');
+    const clientIp = parts[parts.length - 1]?.trim();
 
     if (clientIp) {
       return clientIp;

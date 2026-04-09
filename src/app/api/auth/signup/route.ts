@@ -6,7 +6,59 @@ import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 
+// Simple in-memory rate limiter: max 5 registrations per IP per hour
+type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+const rateLimitMap = new Map<string, RateLimitEntry>();
+
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const RATE_LIMIT_CLEANUP_THRESHOLD = 1000;
+
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    const parts = forwarded.split(',');
+    const ip = parts[parts.length - 1]?.trim();
+    if (ip) return ip;
+  }
+  return 'unknown';
+}
+
+function checkSignupRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    // Lazily evict expired entries to prevent unbounded memory growth
+    if (rateLimitMap.size > RATE_LIMIT_CLEANUP_THRESHOLD) {
+      for (const [key, val] of rateLimitMap) {
+        if (val.resetAt <= now) {
+          rateLimitMap.delete(key);
+        }
+      }
+    }
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
+
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+
+  if (!checkSignupRateLimit(ip)) {
+    return NextResponse.json({ error: 'Too many signup attempts. Please try again later.' }, { status: 429 });
+  }
+
   const body = (await request.json().catch(() => null)) as {
     name?: string;
     email?: string;
