@@ -36,15 +36,48 @@ export function maskWebhookSecret(secret: string): string {
   return `wh_...${secret.slice(-8)}`;
 }
 
+// Patterns matching private/internal hostnames and IP ranges that must not receive webhooks.
+// Covers loopback, link-local, RFC-1918 private ranges, and IPv6 equivalents.
+const BLOCKED_HOSTNAME_PATTERNS: RegExp[] = [
+  // IPv4 loopback (127.x.x.x) and 0.0.0.0
+  /^127\.\d+\.\d+\.\d+$/,
+  /^0\.0\.0\.0$/,
+  // RFC-1918 private ranges
+  /^10\.\d+\.\d+\.\d+$/,
+  /^172\.(1[6-9]|2\d|3[01])\.\d+\.\d+$/,
+  /^192\.168\.\d+\.\d+$/,
+  // Link-local / APIPA / AWS IMDS
+  /^169\.254\.\d+\.\d+$/,
+  // IPv6 loopback and various private/link-local forms
+  /^::1$/,
+  /^\[::1\]$/,
+  /^fc[0-9a-f]{2}:/i,
+  /^fd[0-9a-f]{2}:/i,
+  /^fe80:/i,
+];
+
+function isBlockedHostname(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  // Strip enclosing brackets for IPv6 literals
+  const stripped = h.startsWith('[') && h.endsWith(']') ? h.slice(1, -1) : h;
+  return BLOCKED_HOSTNAME_PATTERNS.some((re) => re.test(stripped));
+}
+
 export function isValidWebhookUrl(value: string): boolean {
   try {
     const url = new URL(value);
 
     if (url.protocol === 'https:') {
-      return true;
+      // Block requests to private/internal addresses even over HTTPS
+      return !isBlockedHostname(url.hostname);
     }
 
-    return url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1');
+    // Allow plain HTTP only to localhost for local development/testing
+    return (
+      url.protocol === 'http:' &&
+      (url.hostname === 'localhost' || url.hostname === '127.0.0.1') &&
+      !isBlockedHostname(url.hostname)
+    );
   } catch {
     return false;
   }
