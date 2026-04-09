@@ -38,6 +38,7 @@ export function maskWebhookSecret(secret: string): string {
 
 // Patterns matching private/internal hostnames and IP ranges that must not receive webhooks.
 // Covers loopback, link-local, RFC-1918 private ranges, and IPv6 equivalents.
+// IPv6 addresses in URL hostnames are bracket-stripped before matching (see isBlockedHostname).
 const BLOCKED_HOSTNAME_PATTERNS: RegExp[] = [
   // IPv4 loopback (127.x.x.x) and 0.0.0.0
   /^127\.\d+\.\d+\.\d+$/,
@@ -48,12 +49,12 @@ const BLOCKED_HOSTNAME_PATTERNS: RegExp[] = [
   /^192\.168\.\d+\.\d+$/,
   // Link-local / APIPA / AWS IMDS
   /^169\.254\.\d+\.\d+$/,
-  // IPv6 loopback and various private/link-local forms
+  // IPv6 loopback
   /^::1$/,
-  /^\[::1\]$/,
-  /^fc[0-9a-f]{2}:/i,
-  /^fd[0-9a-f]{2}:/i,
-  /^fe80:/i,
+  // IPv6 ULA (fc00::/7) — first byte is fc or fd, then any hex and colons
+  /^f[cd][0-9a-f]{0,2}:[0-9a-f:]*$/i,
+  // IPv6 link-local (fe80::/10) — first byte fe, second nibble 8–b
+  /^fe[89ab][0-9a-f]?:[0-9a-f:]*$/i,
 ];
 
 function isBlockedHostname(hostname: string): boolean {

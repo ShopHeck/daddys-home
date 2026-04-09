@@ -15,6 +15,7 @@ const rateLimitMap = new Map<string, RateLimitEntry>();
 
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const RATE_LIMIT_CLEANUP_THRESHOLD = 1000;
 
 function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
@@ -31,8 +32,8 @@ function checkSignupRateLimit(ip: string): boolean {
   const entry = rateLimitMap.get(ip);
 
   if (!entry || now > entry.resetAt) {
-    // Lazily evict a handful of expired entries to prevent unbounded growth
-    if (rateLimitMap.size > 1000) {
+    // Lazily evict expired entries to prevent unbounded memory growth
+    if (rateLimitMap.size > RATE_LIMIT_CLEANUP_THRESHOLD) {
       for (const [key, val] of rateLimitMap) {
         if (val.resetAt <= now) {
           rateLimitMap.delete(key);
