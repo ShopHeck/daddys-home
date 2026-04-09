@@ -31,6 +31,14 @@ function checkSignupRateLimit(ip: string): boolean {
   const entry = rateLimitMap.get(ip);
 
   if (!entry || now > entry.resetAt) {
+    // Lazily evict a handful of expired entries to prevent unbounded growth
+    if (rateLimitMap.size > 1000) {
+      for (const [key, val] of rateLimitMap) {
+        if (val.resetAt <= now) {
+          rateLimitMap.delete(key);
+        }
+      }
+    }
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
     return true;
   }

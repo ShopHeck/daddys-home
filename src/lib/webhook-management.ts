@@ -75,8 +75,7 @@ export function isValidWebhookUrl(value: string): boolean {
     // Allow plain HTTP only to localhost for local development/testing
     return (
       url.protocol === 'http:' &&
-      (url.hostname === 'localhost' || url.hostname === '127.0.0.1') &&
-      !isBlockedHostname(url.hostname)
+      (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
     );
   } catch {
     return false;
