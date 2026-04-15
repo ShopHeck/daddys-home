@@ -165,7 +165,7 @@ export async function POST(request: Request) {
           templateVersionId: currentVersion?.id,
           status: 'FAILED',
           durationMs,
-          errorMessage: renderError!.message,
+          errorMessage: renderError?.message ?? 'Unknown error',
           apiKeyId: apiKeyId ?? undefined
         });
       }
