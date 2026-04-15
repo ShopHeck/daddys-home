@@ -132,15 +132,23 @@ export async function POST(request: Request) {
       );
     }
 
+    let pdf: Buffer | undefined;
+    let renderError: Error | undefined;
+
     try {
-      const pdf = await renderPdfFromTemplate({
+      pdf = await renderPdfFromTemplate({
         template: template.content,
         data: item.data,
         options: item.options
       });
-      const durationMs = Math.round(performance.now() - startTime);
+    } catch (error) {
+      renderError = error instanceof Error ? error : new Error('Unknown error');
+    }
 
-      try {
+    const durationMs = Math.round(performance.now() - startTime);
+
+    try {
+      if (pdf !== undefined) {
         await recordUsage({
           userId,
           templateId: template.id,
@@ -150,10 +158,34 @@ export async function POST(request: Request) {
           fileSizeBytes: pdf.length,
           apiKeyId: apiKeyId ?? undefined
         });
-      } catch (error) {
-        console.error('Failed to record usage:', error);
+      } else {
+        await recordUsage({
+          userId,
+          templateId: template.id,
+          templateVersionId: currentVersion?.id,
+          status: 'FAILED',
+          durationMs,
+          errorMessage: renderError!.message,
+          apiKeyId: apiKeyId ?? undefined
+        });
+      }
+    } catch (usageError) {
+      const result: BatchRenderResultItem = {
+        index,
+        status: 'FAILED',
+        error: 'Usage recording failed',
+        durationMs
+      };
+
+      if (schemaWarnings.length > 0) {
+        result.schemaWarnings = schemaWarnings;
       }
 
+      results.push(result);
+      return;
+    }
+
+    if (pdf !== undefined) {
       const result: BatchRenderResultItem = {
         index,
         status: 'SUCCESS',
@@ -167,28 +199,10 @@ export async function POST(request: Request) {
       }
 
       results.push(result);
-
-      // TODO: dispatch render.completed / render.failed webhooks when webhook system is available
-    } catch (error) {
-      const durationMs = Math.round(performance.now() - startTime);
-      const rawMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorMessage = error instanceof Error && /(Parse error|Expecting|got)/i.test(error.message)
+    } else {
+      const errorMessage = renderError instanceof Error && /(Parse error|Expecting|got)/i.test(renderError.message)
         ? 'Invalid template data'
         : 'Render failed';
-
-      try {
-        await recordUsage({
-          userId,
-          templateId: template.id,
-          templateVersionId: currentVersion?.id,
-          status: 'FAILED',
-          durationMs,
-          errorMessage: rawMessage,
-          apiKeyId: apiKeyId ?? undefined
-        });
-      } catch (recordUsageError) {
-        console.error('Failed to record usage:', recordUsageError);
-      }
 
       const result: BatchRenderResultItem = {
         index,
@@ -202,9 +216,9 @@ export async function POST(request: Request) {
       }
 
       results.push(result);
-
-      // TODO: dispatch render.completed / render.failed webhooks when webhook system is available
     }
+
+    // TODO: dispatch render.completed / render.failed webhooks when webhook system is available
   });
 
   results.sort((a, b) => a.index - b.index);
