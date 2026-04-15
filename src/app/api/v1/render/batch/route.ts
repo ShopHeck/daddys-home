@@ -170,6 +170,8 @@ export async function POST(request: Request) {
         });
       }
     } catch (usageError) {
+      console.error('Failed to record usage for batch item:', usageError);
+
       const result: BatchRenderResultItem = {
         index,
         status: 'FAILED',
