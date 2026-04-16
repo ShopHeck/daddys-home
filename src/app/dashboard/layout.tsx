@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getUserTeams } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -22,14 +22,8 @@ export default async function DashboardLayout({
     redirect("/auth/login");
   }
 
-  // Load user's teams
-  const memberships = await prisma.teamMember.findMany({
-    where: { userId: session.user.id },
-    include: {
-      team: { select: { id: true, name: true, personal: true } },
-    },
-    orderBy: { createdAt: "asc" },
-  });
+  // Load user's teams (cached via React.cache for request deduplication)
+  const memberships = await getUserTeams(session.user.id);
 
   const teams = memberships.map((m) => ({
     id: m.team.id,
