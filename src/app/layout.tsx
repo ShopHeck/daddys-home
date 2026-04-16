@@ -4,6 +4,10 @@ import './globals.css';
 import { AppChrome } from '@/components/AppChrome';
 import { Providers } from '@/components/Providers';
 
+export const viewport = {
+  themeColor: '#020617',
+};
+
 const baseUrl = process.env.NEXTAUTH_URL || 'https://docforge.app';
 
 export const metadata: Metadata = {
@@ -37,6 +41,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Prata&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+      </head>
       <body>
         <Providers>
           <AppChrome>{children}</AppChrome>
