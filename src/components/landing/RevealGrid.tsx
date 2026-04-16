@@ -18,6 +18,11 @@ export function RevealGrid({ children, className }: RevealGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -33,6 +38,11 @@ export function RevealGrid({ children, className }: RevealGridProps) {
 
   useEffect(() => {
     if (prefersReducedMotion) {
+      setIsVisible(true);
+      return;
+    }
+
+    if (!("IntersectionObserver" in window)) {
       setIsVisible(true);
       return;
     }
@@ -57,7 +67,7 @@ export function RevealGrid({ children, className }: RevealGridProps) {
     return () => observer.disconnect();
   }, [prefersReducedMotion]);
 
-  if (prefersReducedMotion) {
+  if (!mounted || prefersReducedMotion) {
     return <div className={className}>{children}</div>;
   }
 
