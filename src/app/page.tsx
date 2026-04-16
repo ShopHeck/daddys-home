@@ -306,37 +306,29 @@ export default function HomePage() {
                   <th className="pb-4 text-xs font-medium uppercase tracking-wide text-slate-500 text-center w-32">DocRaptor</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-800">
                 {comparisonRows.map((row) => (
-                  <tr key={row.feature} className="border-b border-slate-800/60">
-                    <td className="py-4 text-sm text-slate-300">{row.feature}</td>
-                    <td className="py-4 text-center">
-                      {row.docforge ? (
-                        <span style={{ color: 'oklch(0.65 0.18 145)' }}>—</span>
-                      ) : (
-                        <span className="text-slate-600">—</span>
-                      )}
+                  <tr key={row.feature}>
+                    <td className="px-6 py-4 text-sm text-slate-300">{row.feature}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={row.docforge ? 'font-medium' : 'text-slate-700'} style={{ color: row.docforge ? 'oklch(0.65 0.18 145)' : undefined }}>
+                        {row.docforge ? '✓' : '✗'}
+                      </span>
                     </td>
-                    <td className="py-4 text-center">
-                      {row.wkhtmltopdf ? (
-                        <span style={{ color: 'oklch(0.65 0.18 145)' }}>—</span>
-                      ) : (
-                        <span className="text-slate-600">—</span>
-                      )}
+                    <td className="px-6 py-4 text-center">
+                      <span className={row.wkhtmltopdf ? 'text-slate-300' : 'text-slate-700'}>
+                        {row.wkhtmltopdf ? '✓' : '✗'}
+                      </span>
                     </td>
-                    <td className="py-4 text-center">
-                      {row.puppeteerDiy ? (
-                        <span style={{ color: 'oklch(0.65 0.18 145)' }}>—</span>
-                      ) : (
-                        <span className="text-slate-600">—</span>
-                      )}
+                    <td className="px-6 py-4 text-center">
+                      <span className={row.puppeteerDiy ? 'text-slate-300' : 'text-slate-700'}>
+                        {row.puppeteerDiy ? '✓' : '✗'}
+                      </span>
                     </td>
-                    <td className="py-4 text-center">
-                      {row.docraptor ? (
-                        <span style={{ color: 'oklch(0.65 0.18 145)' }}>—</span>
-                      ) : (
-                        <span className="text-slate-600">—</span>
-                      )}
+                    <td className="px-6 py-4 text-center">
+                      <span className={row.docraptor ? 'text-slate-300' : 'text-slate-700'}>
+                        {row.docraptor ? '✓' : '✗'}
+                      </span>
                     </td>
                   </tr>
                 ))}
