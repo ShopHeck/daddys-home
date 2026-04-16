@@ -9,3 +9,31 @@
 body {
   @apply min-h-screen bg-slate-950 text-slate-100 antialiased;
 }
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+::view-transition-old(root) {
+  animation: 180ms ease-in both fade-out;
+}
+
+::view-transition-new(root) {
+  animation: 220ms ease-out both fade-in;
+}
+
+::view-transition-old(preview-panel) {
+  animation: 180ms ease-in both fade-out;
+}
+
+::view-transition-new(preview-panel) {
+  animation: 220ms ease-out both fade-in;
+}
