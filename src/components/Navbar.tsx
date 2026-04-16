@@ -15,28 +15,36 @@ export function Navbar() {
   const isAuthenticated = status === 'authenticated';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
-        <Link className="flex items-center gap-3 text-sm font-semibold tracking-wide text-white" href="/">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-500/40 bg-blue-500/10 text-blue-300">
-            DF
+    <header className="sticky top-0 z-40 border-b border-slate-800/60 bg-slate-950">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4 lg:py-5">
+        <Link className="flex items-baseline gap-2 text-white group" href="/">
+          <span className="font-serif text-xl tracking-tight" style={{ fontFamily: "'Prata', Georgia, serif" }}>
+            Doc
           </span>
-          <span>DocForge</span>
+          <span style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }} className="text-[0.65rem] font-medium uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-300 transition-colors">
+            Forge
+          </span>
         </Link>
-        <nav className="flex items-center gap-6">
-          <div className="hidden items-center gap-6 sm:flex">
-            <Link className="text-sm text-slate-300 transition hover:text-white" href="/#pricing">
+        <nav className="flex items-center gap-8">
+          <div className="hidden items-center gap-8 sm:flex">
+            <Link 
+              className="text-sm font-medium text-slate-400 tracking-wide hover:text-white transition-colors" 
+              href="/#pricing"
+            >
               Pricing
             </Link>
-            <Link className="text-sm text-slate-300 transition hover:text-white" href="/docs">
+            <Link 
+              className="text-sm font-medium text-slate-400 tracking-wide hover:text-white transition-colors" 
+              href="/docs"
+            >
               Docs
             </Link>
           </div>
           <Link
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500"
+            className="text-sm font-medium text-white border-b border-slate-600 pb-0.5 hover:border-white transition-colors"
             href={isAuthenticated ? '/dashboard' : '/auth/signup'}
           >
-            {isAuthenticated ? 'Dashboard' : 'Sign Up'}
+            {isAuthenticated ? 'Dashboard' : 'Sign in'}
           </Link>
         </nav>
       </div>

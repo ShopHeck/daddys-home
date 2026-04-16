@@ -28,32 +28,26 @@ const howItWorks = [
 
 const features = [
   {
-    icon: '⚡',
     title: 'Sub-second rendering',
     description: 'Chromium-powered PDF generation with optimized pooling delivers documents in under 2 seconds.',
   },
   {
-    icon: '🔄',
     title: 'Template versioning',
     description: 'Track every change to your templates with full version history. Roll back anytime without breaking live integrations.',
   },
   {
-    icon: '📦',
     title: 'Batch rendering',
     description: 'Generate up to 50 PDFs in a single API call. Perfect for monthly invoices, reports, and bulk document runs.',
   },
   {
-    icon: '🎨',
     title: 'Custom CSS & fonts',
     description: 'Upload custom stylesheets and load web fonts. Full control over typography, layout, and branding.',
   },
   {
-    icon: '🔗',
     title: 'Webhooks & storage',
     description: 'Get notified when renders complete. Auto-store PDFs in S3-compatible storage with signed download links.',
   },
   {
-    icon: '👥',
     title: 'Team workspaces',
     description: 'Collaborate with role-based access control. Manage templates, API keys, and billing across your organization.',
   },
@@ -161,110 +155,120 @@ export default function HomePage() {
   };
 
   return (
-    <main>
+    <main style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }}>
+      <style>{`
+        .font-display {
+          font-family: 'Prata', Georgia, serif;
+        }
+      `}</style>
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <section className="relative overflow-hidden px-6 py-24 sm:py-32">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.2),transparent_45%)]" />
-        <div className="relative mx-auto flex max-w-7xl flex-col gap-16 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-3xl">
-            <span className="inline-flex rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-blue-300">
-              Document generation API
-            </span>
-            <h1 className="mt-6 text-5xl font-semibold tracking-tight text-white sm:text-6xl">
-              Generate PDFs from HTML templates via API
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-              DocForge gives your product team a fast, reliable document pipeline for invoices, proposals, and branded PDFs without managing rendering infrastructure.
-            </p>
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <Link className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-blue-500" href="/auth/signup">
-                Start free
-              </Link>
-              <Link className="rounded-lg bg-slate-700 px-5 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-600" href="/docs">
-                Read docs
-              </Link>
-            </div>
-          </div>
 
-          <div className="w-full max-w-xl rounded-2xl border border-slate-700 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/50">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <p className="text-sm font-medium text-white">Render request</p>
-                <p className="text-xs text-slate-400">One endpoint. One payload. One PDF.</p>
+      <section className="relative px-6 pt-20 pb-24 lg:pt-32 lg:pb-40 overflow-hidden">
+        <div className="relative mx-auto max-w-7xl">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start">
+            <div className="lg:col-span-7">
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400 mb-8">
+                Document generation API
+              </p>
+              <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl leading-[0.95] tracking-tight text-white">
+                Generate<br />
+                <span style={{ color: 'oklch(0.65 0.15 250)' }}>PDFs</span> from<br />
+                HTML templates
+              </h1>
+              <p className="mt-10 max-w-xl text-lg font-normal leading-relaxed text-slate-400">
+                DocForge gives your product team a fast, reliable document pipeline for invoices, proposals, and branded PDFs — without managing rendering infrastructure.
+              </p>
+              <div className="mt-12 flex flex-col sm:flex-row gap-4">
+                <Link 
+                  href="/auth/signup" 
+                  className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-slate-950 bg-white hover:bg-slate-100 transition-colors"
+                >
+                  Start free
+                </Link>
+                <Link 
+                  href="/docs" 
+                  className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white border border-slate-700 hover:border-slate-500 transition-colors"
+                >
+                  Read documentation
+                </Link>
               </div>
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
-                POST /api/v1/render
-              </span>
             </div>
-            <pre className="mt-4 overflow-x-auto rounded-lg bg-slate-950 p-4 font-mono text-sm text-slate-300">{codeExample}</pre>
+
+            <div className="mt-16 lg:mt-0 lg:col-span-5 lg:col-start-8">
+              <div className="bg-slate-900 border border-slate-800">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+                  <span className="text-xs font-medium uppercase tracking-wide text-slate-500">POST /api/v1/render</span>
+                  <span className="flex h-2 w-2 rounded-full" style={{ backgroundColor: 'oklch(0.65 0.18 145)' }} />
+                </div>
+                <pre className="p-4 overflow-x-auto text-sm text-slate-300 font-mono" style={{ fontSize: '0.8125rem', lineHeight: 1.6 }}>{codeExample}</pre>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="border-y border-slate-800 bg-slate-900/50">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-6 py-10 sm:grid-cols-4">
-          {[
-            { value: '2M+', label: 'PDFs generated' },
-            { value: '500+', label: 'Teams using DocForge' },
-            { value: '99.9%', label: 'API uptime' },
-            { value: '<2s', label: 'Avg render time' },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <p className="text-3xl font-semibold text-white">{stat.value}</p>
-              <p className="mt-1 text-sm text-slate-400">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 py-12 sm:py-20">
-        <div className="max-w-2xl">
-          <p className="text-sm uppercase tracking-[0.2em] text-blue-300">How it works</p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">From template to PDF in three steps</h2>
-        </div>
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          {howItWorks.map((item) => (
-            <div key={item.step} className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-              <span className="text-sm font-medium text-blue-300">{item.step}</span>
-              <h3 className="mt-4 text-xl font-semibold text-white">{item.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-300">{item.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 py-12 sm:py-20">
-        <div className="max-w-2xl">
-          <p className="text-sm uppercase tracking-[0.2em] text-blue-300">Features</p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            Everything you need for document automation
-          </h2>
-        </div>
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <div key={feature.title} className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-              <span className="text-2xl">{feature.icon}</span>
-              <h3 className="mt-4 text-lg font-semibold text-white">{feature.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-300">{feature.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 py-12 sm:py-20">
-        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-blue-300">Developer-first</p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Ship document workflows without owning PDF infrastructure</h2>
-            <p className="mt-4 text-base leading-7 text-slate-300">
-              Use a stored template ID, pass in structured JSON, and let DocForge handle rendering, tier enforcement, and analytics.
-            </p>
+      <section className="px-6 py-20 lg:py-28 border-t border-slate-800/60">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-2xl">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 mb-4">How it works</p>
+            <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white">
+              From template<br />to PDF
+            </h2>
           </div>
-          <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl shadow-slate-950/30">
-            <pre className="overflow-x-auto rounded-lg bg-slate-950 p-4 font-mono text-sm text-slate-300">{`await fetch('/api/v1/render', {
+          <div className="mt-16 grid gap-12 lg:grid-cols-3">
+            {howItWorks.map((item, index) => (
+              <div key={item.step} className={index === 1 ? 'lg:mt-12' : ''}>
+                <span className="font-display text-5xl text-slate-700 italic">{item.step}</span>
+                <h3 className="mt-6 text-xl font-medium text-white">{item.title}</h3>
+                <p className="mt-3 text-base text-slate-400 leading-relaxed">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-6 py-20 lg:py-28">
+        <div className="mx-auto max-w-7xl">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-12">
+            <div className="lg:col-span-4">
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 mb-4">Features</p>
+              <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white">
+                Everything for document automation
+              </h2>
+            </div>
+            <div className="mt-12 lg:mt-0 lg:col-span-8">
+              <div className="grid gap-px bg-slate-800 sm:grid-cols-2">
+                {features.map((feature) => (
+                  <div key={feature.title} className="bg-slate-950 p-6 lg:p-8">
+                    <h3 className="text-base font-medium text-white">{feature.title}</h3>
+                    <p className="mt-2 text-sm text-slate-400 leading-relaxed">{feature.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-6 py-20 lg:py-28 border-t border-slate-800/60">
+        <div className="mx-auto max-w-7xl">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-12 lg:items-start">
+            <div className="lg:col-span-5">
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 mb-4">Developer-first</p>
+              <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white">
+                Ship without infrastructure
+              </h2>
+              <p className="mt-6 text-base text-slate-400 leading-relaxed max-w-md">
+                Use a stored template ID, pass in structured JSON, and let DocForge handle rendering, tier enforcement, and analytics.
+              </p>
+            </div>
+            <div className="mt-10 lg:mt-0 lg:col-span-6 lg:col-start-7">
+              <div className="bg-slate-900 border border-slate-800">
+                <pre className="p-5 overflow-x-auto text-sm text-slate-300 font-mono" style={{ fontSize: '0.8125rem', lineHeight: 1.7 }}>{`await fetch('/api/v1/render', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -278,169 +282,212 @@ export default function HomePage() {
     }
   })
 });`}</pre>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-12 sm:py-20">
-        <div className="max-w-2xl">
-          <p className="text-sm uppercase tracking-[0.2em] text-blue-300">Compare</p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+      <section className="px-6 py-20 lg:py-28">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 mb-4">Compare</p>
+          <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white max-w-xl">
             Why teams choose DocForge
           </h2>
-          <p className="mt-4 text-base leading-7 text-slate-300">
-            Stop wrestling with headless browser infrastructure or limited PDF libraries.
-          </p>
-        </div>
-        <div className="mt-12 overflow-x-auto rounded-lg border border-slate-700">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-700 bg-slate-800">
-              <tr>
-                <th className="px-6 py-4 font-medium text-slate-300">Feature</th>
-                <th className="px-6 py-4 font-semibold text-blue-300">DocForge</th>
-                <th className="px-6 py-4 font-medium text-slate-400">wkhtmltopdf</th>
-                <th className="px-6 py-4 font-medium text-slate-400">Puppeteer DIY</th>
-                <th className="px-6 py-4 font-medium text-slate-400">DocRaptor</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {comparisonRows.map((row) => (
-                <tr key={row.feature} className="bg-slate-900/50">
-                  <td className="px-6 py-4 text-slate-300">{row.feature}</td>
-                  <td className="px-6 py-4 text-green-400 font-medium">{row.docforge ? '✓' : '—'}</td>
-                  <td className="px-6 py-4 text-slate-500">{row.wkhtmltopdf ? '✓' : '—'}</td>
-                  <td className="px-6 py-4 text-slate-500">{row.puppeteerDiy ? '✓' : '—'}</td>
-                  <td className="px-6 py-4 text-slate-500">{row.docraptor ? '✓' : '—'}</td>
+
+          <div className="mt-16 overflow-x-auto">
+            <table className="w-full text-left min-w-[600px]">
+              <thead>
+                <tr className="border-b border-slate-800">
+                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-slate-500">Feature</th>
+                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-white text-center w-32">DocForge</th>
+                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-slate-500 text-center w-32">wkhtmltopdf</th>
+                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-slate-500 text-center w-32">Puppeteer DIY</th>
+                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-slate-500 text-center w-32">DocRaptor</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {comparisonRows.map((row) => (
+                  <tr key={row.feature} className="border-b border-slate-800/60">
+                    <td className="py-4 text-sm text-slate-300">{row.feature}</td>
+                    <td className="py-4 text-center">
+                      {row.docforge ? (
+                        <span style={{ color: 'oklch(0.65 0.18 145)' }}>—</span>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
+                    </td>
+                    <td className="py-4 text-center">
+                      {row.wkhtmltopdf ? (
+                        <span style={{ color: 'oklch(0.65 0.18 145)' }}>—</span>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
+                    </td>
+                    <td className="py-4 text-center">
+                      {row.puppeteerDiy ? (
+                        <span style={{ color: 'oklch(0.65 0.18 145)' }}>—</span>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
+                    </td>
+                    <td className="py-4 text-center">
+                      {row.docraptor ? (
+                        <span style={{ color: 'oklch(0.65 0.18 145)' }}>—</span>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-12 sm:py-20">
-        <div className="max-w-2xl">
-          <p className="text-sm uppercase tracking-[0.2em] text-blue-300">Testimonials</p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+      <section className="px-6 py-20 lg:py-28 border-t border-slate-800/60">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 mb-4">Testimonials</p>
+          <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white">
             Trusted by engineering teams
           </h2>
-        </div>
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <div key={testimonial.author} className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-              <span className="text-2xl text-slate-600">&ldquo;</span>
-              <p className="text-sm leading-7 text-slate-300">{testimonial.quote}</p>
-              <div className="mt-6 flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-blue-600/20 flex items-center justify-center text-sm font-medium text-blue-300">
-                  {testimonial.author.split(' ').map(n => n[0]).join('')}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white">{testimonial.author}</p>
-                  <p className="text-xs text-slate-400">{testimonial.role}, {testimonial.company}</p>
+
+          <div className="mt-16 grid gap-8 lg:grid-cols-3">
+            {testimonials.map((testimonial) => (
+              <div key={testimonial.author} className="flex flex-col">
+                <blockquote className="text-lg text-slate-300 leading-relaxed font-display">
+                  "{testimonial.quote}"
+                </blockquote>
+                <div className="mt-8 flex items-center gap-3">
+                  <div 
+                    className="h-10 w-10 flex items-center justify-center text-sm font-medium text-white"
+                    style={{ backgroundColor: 'oklch(0.35 0.05 250)' }}
+                  >
+                    {testimonial.author.split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">{testimonial.author}</p>
+                    <p className="text-xs text-slate-500">{testimonial.role}, {testimonial.company}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-12 sm:py-20" id="pricing">
-        <div className="max-w-2xl">
-          <p className="text-sm uppercase tracking-[0.2em] text-blue-300">Pricing</p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Predictable plans for every stage</h2>
-        </div>
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          {tiers.map((tier) => (
-            <div
-              key={tier.name}
-              className={[
-                'rounded-lg border p-6',
-                tier.featured ? 'border-blue-500 bg-slate-800 shadow-xl shadow-blue-950/20' : 'border-slate-700 bg-slate-800'
-              ].join(' ')}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-white">{tier.name}</h3>
-                  <p className="mt-2 text-sm text-slate-400">{tier.docs}</p>
-                </div>
-                {tier.featured ? (
-                  <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300">
-                    Popular
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-8 text-4xl font-semibold text-white">{tier.price}</p>
-              <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                {tier.features.map((feature) => (
-                  <li key={feature} className="flex gap-3">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-blue-400" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <PricingPlanButton tierName={tier.name} />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 py-12 sm:py-20">
-        <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-600/10 to-slate-900 p-10 text-center sm:p-16">
-          <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            Start generating PDFs in 5 minutes
+      <section id="pricing" className="px-6 py-20 lg:py-28">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 mb-4">Pricing</p>
+          <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white">
+            Predictable plans
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-300">
-            Create a free account, upload your first template, and render your first PDF — no credit card required.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-blue-500" href="/auth/signup">
-              Create free account
-            </Link>
-            <Link className="rounded-lg bg-slate-700 px-6 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-600" href="/docs">
-              View API docs
-            </Link>
+
+          <div className="mt-16 lg:grid lg:grid-cols-12 lg:gap-6">
+            {tiers.map((tier, index) => (
+              <div 
+                key={tier.name} 
+                className={`${index === 1 ? 'lg:col-span-5' : 'lg:col-span-3'} ${index === 0 ? 'lg:col-start-1' : index === 1 ? 'lg:col-start-5' : 'lg:col-start-10'} mb-6 lg:mb-0`}
+              >
+                <div className={`border h-full flex flex-col ${tier.featured ? 'border-slate-600 bg-slate-900' : 'border-slate-800 bg-slate-950'}`}>
+                  <div className="p-6">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500">{tier.name}</span>
+                      {tier.featured && (
+                        <span className="text-xs text-slate-400">Popular</span>
+                      )}
+                    </div>
+                    <p className="mt-4 font-display text-4xl text-white">{tier.price}</p>
+                    <p className="mt-1 text-sm text-slate-500">{tier.docs}</p>
+                  </div>
+                  <div className="px-6 pb-6 flex-1">
+                    <ul className="space-y-2">
+                      {tier.features.map((feature) => (
+                        <li key={feature} className="text-sm text-slate-400">{feature}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="px-6 pb-6">
+                    <PricingPlanButton tierName={tier.name} />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-slate-800 px-6 py-12">
-        <div className="mx-auto grid max-w-7xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-500/40 bg-blue-500/10 text-sm font-semibold text-blue-300">
-                DF
-              </span>
-              <span className="text-sm font-semibold text-white">DocForge</span>
+      <section className="px-6 py-20 lg:py-28 border-t border-slate-800/60">
+        <div className="mx-auto max-w-7xl">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-12 lg:items-center">
+            <div className="lg:col-span-7">
+              <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white">
+                Start generating PDFs<br />
+                in five minutes
+              </h2>
+              <p className="mt-6 text-base text-slate-400 leading-relaxed max-w-lg">
+                Create a free account, upload your first template, and render your first PDF — no credit card required.
+              </p>
             </div>
-            <p className="mt-4 text-sm leading-6 text-slate-400">
-              Premium document generation API for teams that need reliable PDF rendering at scale.
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-white">Product</p>
-            <ul className="mt-4 space-y-3 text-sm text-slate-400">
-              <li><Link className="transition hover:text-white" href="/#pricing">Pricing</Link></li>
-              <li><Link className="transition hover:text-white" href="/docs">API Docs</Link></li>
-              <li><Link className="transition hover:text-white" href="/dashboard">Dashboard</Link></li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-white">Developers</p>
-            <ul className="mt-4 space-y-3 text-sm text-slate-400">
-              <li><Link className="transition hover:text-white" href="/docs#getting-started">Getting Started</Link></li>
-              <li><Link className="transition hover:text-white" href="/docs#endpoints">API Reference</Link></li>
-              <li><Link className="transition hover:text-white" href="/docs#template-guide">Template Guide</Link></li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-white">Company</p>
-            <ul className="mt-4 space-y-3 text-sm text-slate-400">
-              <li><a className="transition hover:text-white" href="https://github.com/ShopHeck/daddys-home" rel="noreferrer" target="_blank">GitHub</a></li>
-            </ul>
+            <div className="mt-10 lg:mt-0 lg:col-span-4 lg:col-start-9">
+              <div className="flex flex-col gap-4">
+                <Link 
+                  href="/auth/signup" 
+                  className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-slate-950 bg-white hover:bg-slate-100 transition-colors"
+                >
+                  Create free account
+                </Link>
+                <Link 
+                  href="/docs" 
+                  className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white border border-slate-700 hover:border-slate-500 transition-colors"
+                >
+                  View API docs
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="mx-auto mt-10 max-w-7xl border-t border-slate-800 pt-8 text-sm text-slate-500">
-          © 2026 DocForge. All rights reserved.
+      </section>
+
+      <footer className="px-6 py-16 border-t border-slate-800/60">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="font-display text-lg tracking-tight text-white">Doc</span>
+                <span style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }} className="text-[0.6rem] font-medium uppercase tracking-[0.25em] text-slate-500">Forge</span>
+              </div>
+              <p className="mt-4 text-sm text-slate-500 leading-relaxed">
+                Premium document generation API for teams that need reliable PDF rendering at scale.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Product</p>
+              <ul className="mt-4 space-y-2">
+                <li><Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/#pricing">Pricing</Link></li>
+                <li><Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/docs">API Docs</Link></li>
+                <li><Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/dashboard">Dashboard</Link></li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Developers</p>
+              <ul className="mt-4 space-y-2">
+                <li><Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/docs#getting-started">Getting Started</Link></li>
+                <li><Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/docs#endpoints">API Reference</Link></li>
+                <li><Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/docs#template-guide">Template Guide</Link></li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Company</p>
+              <ul className="mt-4 space-y-2">
+                <li><a className="text-sm text-slate-400 hover:text-white transition-colors" href="https://github.com/ShopHeck/daddys-home" rel="noreferrer" target="_blank">GitHub</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-16 pt-8 border-t border-slate-800/60">
+            <p className="text-xs text-slate-600">© 2026 DocForge. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </main>

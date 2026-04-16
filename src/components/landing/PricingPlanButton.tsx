@@ -9,7 +9,7 @@ type PricingPlanButtonProps = {
 
 function ButtonLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link className="mt-8 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500" href={href}>
+    <Link className="mt-4 inline-flex text-sm font-medium text-white border-b border-white pb-0.5 hover:border-slate-400 transition-colors" href={href}>
       {children}
     </Link>
   );
@@ -17,7 +17,7 @@ function ButtonLink({ href, children }: { href: string; children: React.ReactNod
 
 function DisabledButton({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mt-8 inline-flex cursor-not-allowed rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-300">
+    <span className="mt-4 inline-flex text-sm font-medium text-slate-500">
       {children}
     </span>
   );
