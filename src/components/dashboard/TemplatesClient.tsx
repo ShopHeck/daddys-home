@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { ConfirmModal } from '@/components/ConfirmModal';
 
@@ -14,33 +14,15 @@ type TemplateItem = {
   updatedAt: string;
 };
 
-export function TemplatesClient() {
-  const [templates, setTemplates] = useState<TemplateItem[]>([]);
-  const [loading, setLoading] = useState(true);
+type TemplatesClientProps = {
+  templates: TemplateItem[];
+};
+
+export function TemplatesClient({ templates: initialTemplates }: TemplatesClientProps) {
+  const [templates, setTemplates] = useState<TemplateItem[]>(initialTemplates);
   const [error, setError] = useState('');
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const loadTemplates = async () => {
-    setLoading(true);
-    setError('');
-
-    const response = await fetch('/api/dashboard/templates', { cache: 'no-store' });
-    const payload = (await response.json().catch(() => null)) as TemplateItem[] | { error?: string } | null;
-
-    if (!response.ok || !payload || !Array.isArray(payload)) {
-      setError((payload as { error?: string } | null)?.error ?? 'Unable to load templates.');
-      setLoading(false);
-      return;
-    }
-
-    setTemplates(payload);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    void loadTemplates();
-  }, []);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -57,6 +39,25 @@ export function TemplatesClient() {
     setDeletingId(null);
     setConfirmingId(null);
   };
+
+  const emptyState = (
+    <div className="p-6">
+      <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-6">
+        <h2 className="text-xl font-semibold text-white">Get started with a pre-built template</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+          Browse professionally designed invoices, proposals, reports, labels, and more — then clone one into your account and customize it.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500" href="/dashboard/templates/gallery">
+            Browse Gallery
+          </Link>
+          <Link className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" href="/dashboard/templates/new">
+            Start from Scratch
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -78,25 +79,8 @@ export function TemplatesClient() {
       {error ? <p className="text-sm text-rose-400">{error}</p> : null}
 
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-0">
-        {loading ? (
-          <div className="p-6 text-sm text-slate-400">Loading templates...</div>
-        ) : templates.length === 0 ? (
-          <div className="p-6">
-            <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-6">
-              <h2 className="text-xl font-semibold text-white">Get started with a pre-built template</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                Browse professionally designed invoices, proposals, reports, labels, and more — then clone one into your account and customize it.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500" href="/dashboard/templates/gallery">
-                  Browse Gallery
-                </Link>
-                <Link className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" href="/dashboard/templates/new">
-                  Start from Scratch
-                </Link>
-              </div>
-            </div>
-          </div>
+        {templates.length === 0 ? (
+          emptyState
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-700 text-left text-sm">

@@ -22,18 +22,6 @@ export default async function DashboardOverviewPage() {
   const session = await getServerSession(authOptions);
   const teamId = session!.user.activeTeamId;
 
-  if (teamId) {
-    // Verify membership (any role is fine for viewing overview)
-    const member = await prisma.teamMember.findUnique({
-      where: { teamId_userId: { teamId, userId: session!.user.id } }
-    });
-    if (!member) {
-      // User's activeTeamId points to a team they're not a member of
-      // This can happen if they were removed — show fallback
-      redirect('/dashboard/teams');
-    }
-  }
-
   if (!teamId) {
     return (
       <div className="space-y-8">
@@ -57,11 +45,21 @@ export default async function DashboardOverviewPage() {
     );
   }
 
-  const [usage, templateCount, apiKeyCount] = await Promise.all([
+  // Parallel fetch: membership check + data queries all in one Promise.all
+  const [member, usage, templateCount, apiKeyCount] = await Promise.all([
+    prisma.teamMember.findUnique({
+      where: { teamId_userId: { teamId, userId: session!.user.id } }
+    }),
     getUsageSummary(teamId),
     prisma.template.count({ where: { teamId } }),
     prisma.apiKey.count({ where: { teamId } })
   ]);
+
+  if (!member) {
+    // User's activeTeamId points to a team they're not a member of
+    // This can happen if they were removed — show fallback
+    redirect('/dashboard/teams');
+  }
 
   const usagePercent = usage.limit === 0 ? 0 : Math.min((usage.used / usage.limit) * 100, 100);
 
