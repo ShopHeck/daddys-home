@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getUsageSummary } from '@/lib/usage';
+import { UsageBar } from '@/components/dashboard/UsageBar';
 
 function getUsageColor(percent: number) {
   if (percent >= 80) {
@@ -102,9 +103,7 @@ export default async function DashboardOverviewPage() {
           </div>
           <p className="text-sm font-medium text-slate-300">{usagePercent.toFixed(1)}% used</p>
         </div>
-        <div className="mt-6 h-4 w-full overflow-hidden rounded-full bg-slate-900">
-          <div className={`h-full rounded-full ${getUsageColor(usagePercent)}`} style={{ width: `${usagePercent}%` }} />
-        </div>
+        <UsageBar usagePercent={usagePercent} colorClass={getUsageColor(usagePercent)} />
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">

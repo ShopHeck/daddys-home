@@ -746,14 +746,32 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                 <div className="flex gap-2">
                   <button
                     className={`${tabButtonClassName} ${previewMode === 'html' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                    onClick={() => setPreviewMode('html')}
+                    onClick={() => {
+                      if (previewMode === 'pdf') {
+                        const switchMode = () => setPreviewMode('html');
+                        if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+                          void (document as typeof document & { startViewTransition: (callback: () => void) => { ready: Promise<void> } }).startViewTransition(switchMode);
+                        } else {
+                          switchMode();
+                        }
+                      }
+                    }}
                     type="button"
                   >
                     HTML
                   </button>
                   <button
                     className={`${tabButtonClassName} ${previewMode === 'pdf' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                    onClick={() => setPreviewMode('pdf')}
+                    onClick={() => {
+                      if (previewMode === 'html') {
+                        const switchMode = () => setPreviewMode('pdf');
+                        if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+                          void (document as typeof document & { startViewTransition: (callback: () => void) => { ready: Promise<void> } }).startViewTransition(switchMode);
+                        } else {
+                          switchMode();
+                        }
+                      }
+                    }}
                     type="button"
                   >
                     PDF
@@ -764,7 +782,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
               {previewMode === 'html' ? (
                 <>
                   {previewError ? <p className="mt-3 text-sm text-rose-400">{previewError}</p> : null}
-                  <div className="mt-4 overflow-hidden rounded-lg border border-slate-700 bg-white">
+                  <div style={{ viewTransitionName: 'preview-panel' }} className="mt-4 overflow-hidden rounded-lg border border-slate-700 bg-white">
                     <iframe
                       className="h-[420px] w-full"
                       sandbox="allow-same-origin"
@@ -776,7 +794,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
               ) : (
                 <>
                   {renderError ? <p className="mt-3 text-sm text-rose-400">{renderError}</p> : null}
-                  <div className="mt-4 overflow-hidden rounded-lg border border-slate-700 bg-white">
+                  <div style={{ viewTransitionName: 'preview-panel' }} className="mt-4 overflow-hidden rounded-lg border border-slate-700 bg-white">
                     {pdfUrl ? (
                       <iframe className="h-[420px] w-full" src={pdfUrl} title="Template PDF preview" />
                     ) : (

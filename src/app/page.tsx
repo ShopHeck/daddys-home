@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { PricingPlanButton } from '@/components/landing/PricingPlanButton';
+import { RevealGrid } from '@/components/landing/RevealGrid';
 
 export const metadata: Metadata = {
   title: 'DocForge — Generate PDFs from HTML Templates via API',
@@ -241,14 +242,14 @@ export default function HomePage() {
               </h2>
             </div>
             <div className="mt-12 lg:mt-0 lg:col-span-8">
-              <div className="grid gap-px bg-slate-800 sm:grid-cols-2">
+              <RevealGrid className="grid gap-px bg-slate-800 sm:grid-cols-2">
                 {features.map((feature) => (
                   <div key={feature.title} className="bg-slate-950 p-6 lg:p-8">
                     <h3 className="text-base font-medium text-white">{feature.title}</h3>
                     <p className="mt-2 text-sm text-slate-400 leading-relaxed">{feature.description}</p>
                   </div>
                 ))}
-              </div>
+              </RevealGrid>
             </div>
           </div>
         </div>
