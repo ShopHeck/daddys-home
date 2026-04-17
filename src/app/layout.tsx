@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
+import { Analytics } from '@vercel/analytics/next';
 import { AppChrome } from '@/components/AppChrome';
 import { Providers } from '@/components/Providers';
 
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Providers>
           <AppChrome>{children}</AppChrome>
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
