@@ -21,7 +21,6 @@ type DashboardShellProps = {
   activeTeam?: { id: string; name: string; personal: boolean };
   teams?: Team[];
   tier?: string;
-  paymentFailed?: boolean;
 };
 
 const navigation = [
@@ -52,7 +51,7 @@ const roleLabels: Record<string, string> = {
   MEMBER: "Member",
 };
 
-export function DashboardShell({ children, user, activeTeam, teams = [], tier, paymentFailed }: DashboardShellProps) {
+export function DashboardShell({ children, user, activeTeam, teams = [], tier }: DashboardShellProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [teamDropdownOpen, setTeamDropdownOpen] = useState(false);
@@ -252,21 +251,7 @@ export function DashboardShell({ children, user, activeTeam, teams = [], tier, p
               Sign out
             </button>
           </header>
-          <main className="flex-1">
-            {/* Payment failure warning banner */}
-            {paymentFailed && (
-              <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3 sm:px-6 lg:px-10">
-                <p className="text-sm text-amber-200">
-                  Your last payment failed.{' '}
-                  <Link href="/dashboard/billing" className="font-medium underline underline-offset-2 hover:text-amber-100">
-                    Update your payment method
-                  </Link>{' '}
-                  to keep your plan active.
-                </p>
-              </div>
-            )}
-            <div className="px-4 py-8 sm:px-6 lg:px-10">{children}</div>
-          </main>
+          <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10">{children}</main>
         </div>
       </div>
     </div>

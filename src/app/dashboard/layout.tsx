@@ -37,17 +37,11 @@ export default async function DashboardLayout({
   const activeTeam =
     teams.find((t) => t.id === session.user.activeTeamId) || teams[0];
 
-  // Check for payment failure
+  // Load user tier for upgrade prompts
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { tier: true, stripeCurrentPeriodEnd: true },
+    select: { tier: true },
   });
-
-  // Payment has failed if they're on a paid tier but stripeCurrentPeriodEnd is in the past
-  const paymentFailed =
-    user?.tier !== 'FREE' &&
-    user?.stripeCurrentPeriodEnd != null &&
-    user.stripeCurrentPeriodEnd < new Date();
 
   return (
     <DashboardShell
@@ -66,7 +60,6 @@ export default async function DashboardLayout({
       }
       teams={teams}
       tier={user?.tier ?? 'FREE'}
-      paymentFailed={paymentFailed}
     >
       {children}
     </DashboardShell>
