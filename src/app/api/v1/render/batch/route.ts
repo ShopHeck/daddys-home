@@ -272,6 +272,16 @@ export async function POST(request: Request) {
   const successCount = results.filter((result) => result.status === 'SUCCESS').length;
   const failedCount = results.filter((result) => result.status === 'FAILED').length;
 
+  // Report batch failures to Sentry once (not per item)
+  if (failedCount > 0) {
+    import('@sentry/nextjs').then(({ captureMessage }) => {
+      captureMessage(`Batch render: ${failedCount}/${body.items.length} items failed`, {
+        level: 'error',
+        extra: { templateId: template.id, teamId, failedCount },
+      });
+    }).catch(() => {});
+  }
+
   return NextResponse.json({
     templateId: template.id,
     totalItems: body.items.length,
