@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getUsageSummary } from '@/lib/usage';
 import { UsageBar } from '@/components/dashboard/UsageBar';
+import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist';
 
 function getUsageColor(percent: number) {
   if (percent >= 80) {
@@ -47,13 +48,17 @@ export default async function DashboardOverviewPage() {
   }
 
   // Parallel fetch: membership check + data queries all in one Promise.all
-  const [member, usage, templateCount, apiKeyCount] = await Promise.all([
+  const [member, usage, templateCount, apiKeyCount, firstRender] = await Promise.all([
     prisma.teamMember.findUnique({
       where: { teamId_userId: { teamId, userId: session!.user.id } }
     }),
     getUsageSummary(teamId),
     prisma.template.count({ where: { teamId } }),
-    prisma.apiKey.count({ where: { teamId } })
+    prisma.apiKey.count({ where: { teamId } }),
+    prisma.usageRecord.findFirst({
+      where: { teamId, status: 'SUCCESS' },
+      select: { id: true },
+    }),
   ]);
 
   if (!member) {
@@ -64,6 +69,35 @@ export default async function DashboardOverviewPage() {
 
   const usagePercent = usage.limit === 0 ? 0 : Math.min((usage.used / usage.limit) * 100, 100);
 
+  const onboardingSteps = [
+    {
+      id: 'api-key',
+      label: 'Create an API key',
+      description: 'Generate a key to authenticate your render requests.',
+      href: '/dashboard/api-keys',
+      ctaLabel: 'Generate API key',
+      completed: apiKeyCount > 0,
+    },
+    {
+      id: 'template',
+      label: 'Create a template',
+      description: 'Upload an HTML or Handlebars template to render from.',
+      href: '/dashboard/templates/gallery',
+      ctaLabel: 'Create template',
+      completed: templateCount > 0,
+    },
+    {
+      id: 'render',
+      label: 'Generate your first PDF',
+      description: 'Make your first render via the API or the template editor.',
+      href: '/docs',
+      ctaLabel: 'View documentation',
+      completed: Boolean(firstRender),
+    },
+  ];
+
+  const allComplete = onboardingSteps.every((s) => s.completed);
+
   return (
     <div className="space-y-8">
       <div>
@@ -71,6 +105,8 @@ export default async function DashboardOverviewPage() {
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white">Welcome back, {session?.user.name || 'builder'}</h1>
         <p className="mt-2 text-sm text-slate-400">Track usage, manage templates, and keep your document pipeline healthy.</p>
       </div>
+
+      {!allComplete && <OnboardingChecklist steps={onboardingSteps} />}
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
