@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import * as Sentry from '@sentry/nextjs';
 
 import { getAuthenticatedApiKeyId, getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
 import { prisma } from '@/lib/prisma';
@@ -213,10 +212,6 @@ export async function POST(request: Request) {
         ? 'Invalid template data'
         : 'Render failed';
 
-      Sentry.captureException(error, {
-        extra: { templateId: template.id, teamId, userId },
-      });
-
       try {
         await recordUsage({
           teamId,
@@ -276,6 +271,16 @@ export async function POST(request: Request) {
 
   const successCount = results.filter((result) => result.status === 'SUCCESS').length;
   const failedCount = results.filter((result) => result.status === 'FAILED').length;
+
+  // Report batch failures to Sentry once (not per item)
+  if (failedCount > 0) {
+    import('@sentry/nextjs').then(({ captureMessage }) => {
+      captureMessage(`Batch render: ${failedCount}/${body.items.length} items failed`, {
+        level: 'error',
+        extra: { templateId: template.id, teamId, failedCount },
+      });
+    }).catch(() => {});
+  }
 
   return NextResponse.json({
     templateId: template.id,

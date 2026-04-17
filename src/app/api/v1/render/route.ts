@@ -164,9 +164,10 @@ export async function POST(request: Request) {
     const durationMs = Math.round(performance.now() - startTime);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    Sentry.captureException(error, {
-      extra: { templateId: template.id, teamId, userId },
-    });
+    Sentry.captureException(
+      new Error(`Render failed: ${error instanceof Error ? error.constructor.name : 'UnknownError'}`),
+      { extra: { templateId: template.id, teamId, userId } }
+    );
 
     await recordUsage({
       teamId,
