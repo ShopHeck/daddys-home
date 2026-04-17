@@ -20,6 +20,7 @@ type DashboardShellProps = {
   };
   activeTeam?: { id: string; name: string; personal: boolean };
   teams?: Team[];
+  tier?: string;
 };
 
 const navigation = [
@@ -50,7 +51,7 @@ const roleLabels: Record<string, string> = {
   MEMBER: "Member",
 };
 
-export function DashboardShell({ children, user, activeTeam, teams = [] }: DashboardShellProps) {
+export function DashboardShell({ children, user, activeTeam, teams = [], tier }: DashboardShellProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [teamDropdownOpen, setTeamDropdownOpen] = useState(false);
@@ -200,6 +201,22 @@ export function DashboardShell({ children, user, activeTeam, teams = [] }: Dashb
               );
             })}
           </nav>
+
+          {/* Free tier upgrade nudge */}
+          {tier === 'FREE' && (
+            <div className="mt-auto pt-6 border-t border-slate-800">
+              <div className="rounded-lg bg-slate-900 border border-slate-700 p-4">
+                <p className="text-xs font-medium text-white mb-1">Free plan</p>
+                <p className="text-xs text-slate-400 mb-3">50 docs/month. Upgrade for more.</p>
+                <Link
+                  href="/dashboard/billing"
+                  className="block w-full text-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
+                >
+                  Upgrade to Pro
+                </Link>
+              </div>
+            </div>
+          )}
         </aside>
 
         {isOpen ? (

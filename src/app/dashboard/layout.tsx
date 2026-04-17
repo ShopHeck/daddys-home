@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { authOptions } from "@/lib/auth";
 import { getUserTeams } from "@/lib/queries";
+import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -36,6 +37,12 @@ export default async function DashboardLayout({
   const activeTeam =
     teams.find((t) => t.id === session.user.activeTeamId) || teams[0];
 
+  // Load user tier for upgrade prompts
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { tier: true },
+  });
+
   return (
     <DashboardShell
       user={{
@@ -52,6 +59,7 @@ export default async function DashboardLayout({
           : undefined
       }
       teams={teams}
+      tier={user?.tier ?? 'FREE'}
     >
       {children}
     </DashboardShell>

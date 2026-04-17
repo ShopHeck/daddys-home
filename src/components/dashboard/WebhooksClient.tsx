@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 import { ConfirmModal } from '@/components/ConfirmModal';
@@ -210,7 +211,11 @@ function WebhookFormModal({
   );
 }
 
-export function WebhooksClient() {
+type WebhooksClientProps = {
+  tier: string;
+};
+
+export function WebhooksClient({ tier }: WebhooksClientProps) {
   const [endpoints, setEndpoints] = useState<WebhookEndpointItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -524,6 +529,17 @@ export function WebhooksClient() {
           </div>
         )}
       </div>
+
+      {/* Webhook limit upgrade prompt for FREE tier */}
+      {tier === 'FREE' && endpoints.length >= 1 && (
+        <p className="text-xs text-slate-400 mt-4">
+          Free plan includes 1 webhook endpoint.{' '}
+          <Link href="/dashboard/billing" className="text-blue-400 hover:text-blue-300">
+            Upgrade to Pro
+          </Link>{' '}
+          for 5 endpoints.
+        </p>
+      )}
 
       <WebhookFormModal
         error={formError}
