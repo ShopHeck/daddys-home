@@ -18,6 +18,21 @@ const TIER_RATE_LIMITS: Record<Tier, number> = {
 type MemEntry = { count: number; resetAt: number };
 const memStore = new Map<string, MemEntry>();
 const WINDOW_MS = 10_000;
+const CLEANUP_INTERVAL_MS = 60_000;
+
+if (typeof globalThis !== 'undefined') {
+  // Only run in non-edge environments where setInterval is available
+  if (typeof setInterval !== 'undefined') {
+    setInterval(() => {
+      const now = Date.now();
+      for (const [key, entry] of memStore.entries()) {
+        if (entry.resetAt * 1000 <= now) {
+          memStore.delete(key);
+        }
+      }
+    }, CLEANUP_INTERVAL_MS);
+  }
+}
 
 function memRateLimit(key: string, limit: number): RateLimitResult {
   const now = Date.now();
