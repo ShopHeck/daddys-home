@@ -2,7 +2,7 @@ import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 
 import { sendEmail } from '@/lib/email';
-import { paymentConfirmationEmail } from '@/lib/email-templates';
+import { paymentConfirmationEmail, paymentFailedEmail } from '@/lib/email-templates';
 import { prisma } from '@/lib/prisma';
 import { priceIdToTier, stripe } from '@/lib/stripe';
 import type { Tier } from '@/types';
@@ -148,24 +148,32 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   const customerId = getCustomerId(invoice.customer);
-
-  if (!customerId) {
-    return;
-  }
+  if (!customerId) return;
 
   const user = await prisma.user.findUnique({
     where: { stripeCustomerId: customerId },
-    select: { id: true }
+    select: { id: true, email: true, name: true, tier: true, stripePriceId: true },
   });
 
-  if (!user) {
-    return;
-  }
+  if (!user || user.tier === 'FREE') return;
 
-  console.error('Stripe invoice payment failed', {
-    invoiceId: invoice.id,
-    customerId,
-    userId: user.id
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const updatePaymentUrl = `${baseUrl}/dashboard/billing`;
+
+  const planName = user.tier === 'BUSINESS' ? 'Business' : 'Pro';
+  const amount = user.tier === 'BUSINESS' ? '$99' : '$29';
+
+  sendEmail({
+    to: user.email,
+    subject: 'Your DocForge payment failed — action required',
+    html: paymentFailedEmail({
+      name: user.name || 'there',
+      planName,
+      amount,
+      updatePaymentUrl,
+    }),
+  }).catch((err) => {
+    console.error('Payment failed email error:', err);
   });
 }
 
