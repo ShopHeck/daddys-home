@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 
 import { getAuthenticatedApiKeyId, getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
 import { prisma } from '@/lib/prisma';
@@ -211,6 +212,10 @@ export async function POST(request: Request) {
       const errorMessage = error instanceof Error && /(Parse error|Expecting|got)/i.test(error.message)
         ? 'Invalid template data'
         : 'Render failed';
+
+      Sentry.captureException(error, {
+        extra: { templateId: template.id, teamId, userId },
+      });
 
       try {
         await recordUsage({

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 
 import { getAuthenticatedApiKeyId, getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
 import { prisma } from '@/lib/prisma';
@@ -162,6 +163,10 @@ export async function POST(request: Request) {
   } catch (error) {
     const durationMs = Math.round(performance.now() - startTime);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    Sentry.captureException(error, {
+      extra: { templateId: template.id, teamId, userId },
+    });
 
     await recordUsage({
       teamId,
