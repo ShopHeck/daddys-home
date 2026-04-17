@@ -56,7 +56,7 @@ function createRateLimitResponse(result: RateLimitResult) {
 }
 
 export async function middleware(request: NextRequest) {
-  const ipRateLimit = checkIpRateLimit(getClientIp(request));
+  const ipRateLimit = await checkIpRateLimit(getClientIp(request));
 
   if (!ipRateLimit.allowed) {
     return createRateLimitResponse(ipRateLimit);
@@ -104,7 +104,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  const apiKeyRateLimit = checkApiKeyRateLimit(payload.apiKeyId, payload.tier);
+  const apiKeyRateLimit = await checkApiKeyRateLimit(payload.apiKeyId, payload.tier);
 
   if (!apiKeyRateLimit.allowed) {
     return createRateLimitResponse(apiKeyRateLimit);
