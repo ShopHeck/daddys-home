@@ -52,13 +52,10 @@ export function LoginClient() {
 
   return (
     <main className="flex min-h-[calc(100vh-73px)] items-center justify-center px-6 py-16">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Prata&family=Work+Sans:wght@300;400;500;600&display=swap');
-      `}</style>
       <div className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900 p-10 shadow-xl shadow-slate-950/50">
         <div className="text-center">
           <Link className="inline-flex items-baseline gap-2 text-white group" href="/">
-            <span className="text-xl tracking-tight italic" style={{ fontFamily: "'Prata', Georgia, serif" }}>
+            <span className="text-xl tracking-tight" style={{ fontFamily: "'Prata', Georgia, serif" }}>
               Doc
             </span>
             <span style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }} className="text-[0.65rem] font-medium uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-300 transition-colors">
