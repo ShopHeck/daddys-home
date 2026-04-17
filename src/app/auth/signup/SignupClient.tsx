@@ -71,19 +71,24 @@ export function SignupClient() {
 
   return (
     <main className="flex min-h-[calc(100vh-73px)] items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-2xl shadow-slate-950/40">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Prata&family=Work+Sans:wght@300;400;500;600&display=swap');
+      `}</style>
+      <div className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900 p-10 shadow-xl shadow-slate-950/50">
         <div className="text-center">
-          <Link className="inline-flex items-center gap-3 text-sm font-semibold text-white" href="/">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/40 bg-blue-500/10 text-blue-300">
-              DF
+          <Link className="inline-flex items-baseline gap-2 text-white group" href="/">
+            <span className="text-xl tracking-tight italic" style={{ fontFamily: "'Prata', Georgia, serif" }}>
+              Doc
             </span>
-            <span>DocForge</span>
+            <span style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }} className="text-[0.65rem] font-medium uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-300 transition-colors">
+              FORGE
+            </span>
           </Link>
-          <h1 className="mt-6 text-3xl font-semibold tracking-tight text-white">Create your account</h1>
-          <p className="mt-2 text-sm text-slate-400">Start generating PDFs from stored templates in minutes.</p>
+          <h1 className="mt-8 text-3xl font-medium text-white" style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }}>Create your account</h1>
+          <p className="mt-3 text-sm text-slate-400" style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }}>Start generating PDFs from stored templates in minutes.</p>
         </div>
 
-        <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+        <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-200" htmlFor="name">
               Name
