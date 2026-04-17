@@ -75,6 +75,7 @@ export default async function DashboardOverviewPage() {
       label: 'Create an API key',
       description: 'Generate a key to authenticate your render requests.',
       href: '/dashboard/api-keys',
+      ctaLabel: 'Generate API key',
       completed: apiKeyCount > 0,
     },
     {
@@ -82,6 +83,7 @@ export default async function DashboardOverviewPage() {
       label: 'Create a template',
       description: 'Upload an HTML or Handlebars template to render from.',
       href: '/dashboard/templates/gallery',
+      ctaLabel: 'Create template',
       completed: templateCount > 0,
     },
     {
@@ -89,6 +91,7 @@ export default async function DashboardOverviewPage() {
       label: 'Generate your first PDF',
       description: 'Make your first render via the API or the template editor.',
       href: '/docs',
+      ctaLabel: 'View documentation',
       completed: Boolean(firstRender),
     },
   ];

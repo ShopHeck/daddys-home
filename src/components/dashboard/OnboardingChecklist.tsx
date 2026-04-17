@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 
 type OnboardingStep = {
@@ -7,6 +5,7 @@ type OnboardingStep = {
   label: string;
   description: string;
   href: string;
+  ctaLabel: string;
   completed: boolean;
 };
 
@@ -87,9 +86,7 @@ export function OnboardingChecklist({ steps }: OnboardingChecklistProps) {
                   href={step.href}
                   className="mt-3 inline-flex items-center text-sm font-medium text-blue-400 transition hover:text-blue-300"
                 >
-                  {step.id === "api-key" && "Generate API key"}
-                  {step.id === "template" && "Create template"}
-                  {step.id === "render" && "View documentation"}
+                  {step.ctaLabel}
                   <svg
                     className="ml-1 h-4 w-4"
                     fill="none"
