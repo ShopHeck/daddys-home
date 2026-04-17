@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { authOptions } from "@/lib/auth";
 import { getUserTeams } from "@/lib/queries";
+import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -36,6 +37,18 @@ export default async function DashboardLayout({
   const activeTeam =
     teams.find((t) => t.id === session.user.activeTeamId) || teams[0];
 
+  // Check for payment failure
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { tier: true, stripeCurrentPeriodEnd: true },
+  });
+
+  // Payment has failed if they're on a paid tier but stripeCurrentPeriodEnd is in the past
+  const paymentFailed =
+    user?.tier !== 'FREE' &&
+    user?.stripeCurrentPeriodEnd != null &&
+    user.stripeCurrentPeriodEnd < new Date();
+
   return (
     <DashboardShell
       user={{
@@ -52,6 +65,8 @@ export default async function DashboardLayout({
           : undefined
       }
       teams={teams}
+      tier={user?.tier ?? 'FREE'}
+      paymentFailed={paymentFailed}
     >
       {children}
     </DashboardShell>

@@ -20,6 +20,8 @@ type DashboardShellProps = {
   };
   activeTeam?: { id: string; name: string; personal: boolean };
   teams?: Team[];
+  tier?: string;
+  paymentFailed?: boolean;
 };
 
 const navigation = [
@@ -50,7 +52,7 @@ const roleLabels: Record<string, string> = {
   MEMBER: "Member",
 };
 
-export function DashboardShell({ children, user, activeTeam, teams = [] }: DashboardShellProps) {
+export function DashboardShell({ children, user, activeTeam, teams = [], tier, paymentFailed }: DashboardShellProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [teamDropdownOpen, setTeamDropdownOpen] = useState(false);
@@ -200,6 +202,22 @@ export function DashboardShell({ children, user, activeTeam, teams = [] }: Dashb
               );
             })}
           </nav>
+
+          {/* Free tier upgrade nudge */}
+          {tier === 'FREE' && (
+            <div className="mt-auto pt-6 border-t border-slate-800">
+              <div className="rounded-lg bg-slate-900 border border-slate-700 p-4">
+                <p className="text-xs font-medium text-white mb-1">Free plan</p>
+                <p className="text-xs text-slate-400 mb-3">50 docs/month. Upgrade for more.</p>
+                <Link
+                  href="/dashboard/billing"
+                  className="block w-full text-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
+                >
+                  Upgrade to Pro
+                </Link>
+              </div>
+            </div>
+          )}
         </aside>
 
         {isOpen ? (
@@ -234,7 +252,21 @@ export function DashboardShell({ children, user, activeTeam, teams = [] }: Dashb
               Sign out
             </button>
           </header>
-          <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10">{children}</main>
+          <main className="flex-1">
+            {/* Payment failure warning banner */}
+            {paymentFailed && (
+              <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3 sm:px-6 lg:px-10">
+                <p className="text-sm text-amber-200">
+                  Your last payment failed.{' '}
+                  <Link href="/dashboard/billing" className="font-medium underline underline-offset-2 hover:text-amber-100">
+                    Update your payment method
+                  </Link>{' '}
+                  to keep your plan active.
+                </p>
+              </div>
+            )}
+            <div className="px-4 py-8 sm:px-6 lg:px-10">{children}</div>
+          </main>
         </div>
       </div>
     </div>

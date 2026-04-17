@@ -102,6 +102,21 @@ export default async function DashboardOverviewPage() {
           <p className="text-sm font-medium text-slate-300">{usagePercent.toFixed(1)}% used</p>
         </div>
         <UsageBar usagePercent={usagePercent} colorClass={getUsageColor(usagePercent)} />
+
+        {/* Usage warning upgrade prompt for FREE users at ≥80% quota */}
+        {usage.tier === 'FREE' && usagePercent >= 80 && (
+          <div className="mt-4 flex items-center justify-between rounded-lg bg-blue-500/10 border border-blue-500/20 px-4 py-3">
+            <p className="text-sm text-blue-200">
+              Running low on documents. Upgrade to Pro for 5,000/month.
+            </p>
+            <Link
+              href="/dashboard/billing"
+              className="ml-4 shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
+            >
+              Upgrade
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">
