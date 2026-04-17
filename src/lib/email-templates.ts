@@ -186,3 +186,26 @@ export function teamInviteEmail(params: {
     footerNote: 'This invitation expires in 7 days. If you don\'t have a DocForge account yet, you\'ll need to sign up first.'
   })
 }
+
+export function paymentFailedEmail(params: {
+  name: string;
+  planName: string;
+  amount: string;
+  updatePaymentUrl: string;
+}): string {
+  return createEmailShell({
+    preview: 'Your DocForge payment failed — update your payment method to keep your plan active.',
+    title: 'Payment failed',
+    body: `
+      <p style="margin: 0 0 12px;">Hi ${params.name || 'there'},</p>
+      <p style="margin: 0 0 12px;">We couldn't process your payment of <strong>${params.amount}/month</strong> for the ${params.planName} plan.</p>
+      <p style="margin: 0 0 12px;">Please update your payment method to avoid losing access to your plan. Stripe will automatically retry the charge after you update.</p>
+      <p style="margin: 0;">If you have any questions, reply to this email.</p>
+    `,
+    primaryCta: {
+      label: 'Update Payment Method',
+      href: params.updatePaymentUrl,
+    },
+    footerNote: "If you believe this is an error, contact your bank or reply to this email.",
+  });
+}
