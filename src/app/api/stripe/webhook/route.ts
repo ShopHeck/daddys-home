@@ -2,7 +2,12 @@ import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 
 import { sendEmail } from '@/lib/email';
-import { paymentConfirmationEmail, paymentFailedEmail } from '@/lib/email-templates';
+import {
+  dunningFinalAttemptEmail,
+  dunningFirstAttemptEmail,
+  dunningSecondAttemptEmail,
+  paymentConfirmationEmail
+} from '@/lib/email-templates';
 import { prisma } from '@/lib/prisma';
 import { priceIdToTier, stripe } from '@/lib/stripe';
 import type { Tier } from '@/types';
@@ -162,18 +167,44 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
 
   const planName = user.tier === 'BUSINESS' ? 'Business' : 'Pro';
   const amount = user.tier === 'BUSINESS' ? '$99' : '$29';
+  const name = user.name || 'there';
+  const attemptCount = invoice.attempt_count ?? 1;
+
+  let subject: string;
+  let html: string;
+
+  if (attemptCount <= 1) {
+    subject = 'Your DocForge payment failed — action required';
+    html = dunningFirstAttemptEmail({
+      name,
+      planName,
+      amount,
+      updatePaymentUrl
+    });
+  } else if (attemptCount === 2) {
+    subject = 'Second notice: your DocForge payment is still failing';
+    html = dunningSecondAttemptEmail({
+      name,
+      planName,
+      amount,
+      updatePaymentUrl
+    });
+  } else {
+    subject = 'Final notice: your DocForge subscription is at risk';
+    html = dunningFinalAttemptEmail({
+      name,
+      planName,
+      amount,
+      updatePaymentUrl
+    });
+  }
 
   sendEmail({
     to: user.email,
-    subject: 'Your DocForge payment failed — action required',
-    html: paymentFailedEmail({
-      name: user.name || 'there',
-      planName,
-      amount,
-      updatePaymentUrl,
-    }),
+    subject,
+    html,
   }).catch((err) => {
-    console.error('Payment failed email error:', err);
+    console.error(`Dunning email (attempt ${attemptCount}) error:`, err);
   });
 }
 

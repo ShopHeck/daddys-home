@@ -187,6 +187,13 @@ export function teamInviteEmail(params: {
   })
 }
 
+type DunningEmailParams = {
+  name: string;
+  planName: string;
+  amount: string;
+  updatePaymentUrl: string;
+};
+
 export function paymentFailedEmail(params: {
   name: string;
   planName: string;
@@ -207,5 +214,63 @@ export function paymentFailedEmail(params: {
       href: params.updatePaymentUrl,
     },
     footerNote: "If you believe this is an error, contact your bank or reply to this email.",
+  });
+}
+
+export function dunningFirstAttemptEmail(params: DunningEmailParams): string {
+  return createEmailShell({
+    preview: 'We had trouble processing your DocForge payment. Update your payment method and Stripe will retry automatically.',
+    title: 'Payment failed',
+    body: `
+      <p style="margin: 0 0 12px;">Hi ${params.name || 'there'},</p>
+      <p style="margin: 0 0 12px;">We couldn't process your payment of <strong>${params.amount}/month</strong> for the ${params.planName} plan.</p>
+      <p style="margin: 0 0 12px;">Cards expire, banks flag things, and billing details change — it happens. Please update your payment method and Stripe will retry the charge automatically.</p>
+      <p style="margin: 0;">If you have any questions, reply to this email.</p>
+    `,
+    primaryCta: {
+      label: 'Update Payment Method',
+      href: params.updatePaymentUrl,
+    },
+    footerNote: "If you believe this is an error, contact your bank or reply to this email.",
+  });
+}
+
+export function dunningSecondAttemptEmail(params: DunningEmailParams): string {
+  return createEmailShell({
+    preview: 'Second notice: your DocForge payment is still failing. Update your payment method to keep your plan active.',
+    title: 'Your payment is still failing',
+    body: `
+      <p style="margin: 0 0 12px;">Hi ${params.name || 'there'},</p>
+      <p style="margin: 0 0 12px;">Our second attempt to process your payment for the <strong>${params.planName}</strong> plan also failed.</p>
+      <p style="margin: 0 0 12px;">Your ${params.planName} plan (${params.amount}/month) is at risk, and your plan features may be affected soon if payment isn't resolved.</p>
+      <p style="margin: 0;">Please update your payment method now to keep your features active.</p>
+    `,
+    primaryCta: {
+      label: 'Update Payment Method Now',
+      href: params.updatePaymentUrl,
+    },
+    footerNote: "If you've already updated your payment info, Stripe will retry automatically.",
+  });
+}
+
+export function dunningFinalAttemptEmail(params: DunningEmailParams): string {
+  return createEmailShell({
+    preview: 'Final notice: your DocForge subscription is at risk. Update your payment method immediately to avoid cancellation.',
+    title: 'Final notice — subscription at risk',
+    body: `
+      <p style="margin: 0 0 12px;">Hi ${params.name || 'there'},</p>
+      <p style="margin: 0 0 12px;">Multiple payment attempts for your <strong>${params.planName}</strong> plan have failed.</p>
+      <p style="margin: 0 0 12px;">If this isn't resolved, your subscription will be canceled and you'll lose access to ${params.planName} features like higher document limits, priority rendering, and other paid plan benefits.</p>
+      <p style="margin: 0;">Please update your payment method immediately to avoid interruption.</p>
+    `,
+    primaryCta: {
+      label: 'Update Payment Method',
+      href: params.updatePaymentUrl,
+    },
+    secondaryCta: {
+      label: 'Contact Support',
+      href: 'mailto:support@docforge.dev',
+    },
+    footerNote: "After cancellation, you'll be moved to the Free plan (50 docs/month).",
   });
 }
