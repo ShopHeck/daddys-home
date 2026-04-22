@@ -11,6 +11,8 @@ RUN pnpm install --frozen-lockfile
 FROM node:20-slim AS builder
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 RUN corepack enable && corepack prepare pnpm@10.8.1 --activate
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
@@ -20,7 +22,7 @@ ARG NEXTAUTH_SECRET
 ARG NEXTAUTH_URL
 ENV DATABASE_URL=$DATABASE_URL
 ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
-ENV NEXTAUTH_URL=$NEXTAUTH_URL
+ENV NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
