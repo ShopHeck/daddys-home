@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Prata, Work_Sans } from 'next/font/google';
 import './globals.css';
 
 import { AppChrome } from '@/components/AppChrome';
@@ -9,6 +10,20 @@ export const viewport = {
 };
 
 const baseUrl = process.env.NEXTAUTH_URL || 'https://docforge.app';
+
+const prata = Prata({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-prata',
+  display: 'swap',
+});
+
+const workSans = Work_Sans({
+  weight: ['300', '400', '500', '600'],
+  subsets: ['latin'],
+  variable: '--font-work-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -41,12 +56,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Prata&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-      </head>
-      <body>
+      <body className={`${prata.variable} ${workSans.variable}`}>
         <Providers>
           <AppChrome>{children}</AppChrome>
         </Providers>

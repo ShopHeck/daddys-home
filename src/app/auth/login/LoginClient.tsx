@@ -55,15 +55,15 @@ export function LoginClient() {
       <div className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900 p-10 shadow-xl shadow-slate-950/50">
         <div className="text-center">
           <Link className="inline-flex items-baseline gap-2 text-white group" href="/">
-            <span className="text-xl tracking-tight" style={{ fontFamily: "'Prata', Georgia, serif" }}>
+            <span className="text-xl tracking-tight" style={{ fontFamily: "var(--font-prata), Georgia, serif" }}>
               Doc
             </span>
-            <span style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }} className="text-[0.65rem] font-medium uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-300 transition-colors">
+            <span style={{ fontFamily: "var(--font-work-sans), system-ui, sans-serif" }} className="text-[0.65rem] font-medium uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-300 transition-colors">
               FORGE
             </span>
           </Link>
-          <h1 className="mt-8 text-3xl font-medium text-white" style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }}>Sign in</h1>
-          <p className="mt-3 text-sm text-slate-400" style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }}>Access your dashboard, templates, and API keys.</p>
+          <h1 className="mt-8 text-3xl font-medium text-white" style={{ fontFamily: "var(--font-work-sans), system-ui, sans-serif" }}>Sign in</h1>
+          <p className="mt-3 text-sm text-slate-400" style={{ fontFamily: "var(--font-work-sans), system-ui, sans-serif" }}>Access your dashboard, templates, and API keys.</p>
         </div>
 
         <form className="mt-10 space-y-5" onSubmit={handleSubmit}>

@@ -156,10 +156,10 @@ export default function HomePage() {
   };
 
   return (
-    <main style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }}>
+    <main style={{ fontFamily: "var(--font-work-sans), system-ui, sans-serif" }}>
       <style>{`
         .font-display {
-          font-family: 'Prata', Georgia, serif;
+          font-family: var(--font-prata), Georgia, serif;
         }
       `}</style>
 
@@ -449,7 +449,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-baseline gap-2">
                 <span className="font-display text-lg tracking-tight text-white">Doc</span>
-                <span style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }} className="text-[0.6rem] font-medium uppercase tracking-[0.25em] text-slate-500">Forge</span>
+                <span style={{ fontFamily: "var(--font-work-sans), system-ui, sans-serif" }} className="text-[0.6rem] font-medium uppercase tracking-[0.25em] text-slate-500">Forge</span>
               </div>
               <p className="mt-4 text-sm text-slate-500 leading-relaxed">
                 Premium document generation API for teams that need reliable PDF rendering at scale.

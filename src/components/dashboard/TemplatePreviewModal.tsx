@@ -1,6 +1,5 @@
 "use client";
 
-import Handlebars from 'handlebars/dist/handlebars';
 import { useEffect, useState } from 'react';
 
 import type { GalleryTemplate } from '@/lib/template-gallery';
@@ -38,14 +37,39 @@ export function TemplatePreviewModal({
       return;
     }
 
-    try {
-      const compiled = Handlebars.compile(template.content);
-      setPreviewHtml(compiled(template.sampleData));
-      setPreviewError('');
-    } catch (error) {
-      setPreviewHtml('');
-      setPreviewError(error instanceof Error ? error.message : 'Preview failed.');
-    }
+    let cancelled = false;
+
+    const renderPreview = async () => {
+      try {
+        const { default: Handlebars } = await import('handlebars/dist/handlebars');
+
+        if (cancelled) {
+          return;
+        }
+
+        const compiled = Handlebars.compile(template.content);
+
+        if (cancelled) {
+          return;
+        }
+
+        setPreviewHtml(compiled(template.sampleData));
+        setPreviewError('');
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        setPreviewHtml('');
+        setPreviewError(error instanceof Error ? error.message : 'Preview failed.');
+      }
+    };
+
+    void renderPreview();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, template]);
 
   if (!open || !template) {
