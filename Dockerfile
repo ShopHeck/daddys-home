@@ -34,8 +34,8 @@ RUN mkdir -p public
 RUN pnpm build
 
 # Consolidate Prisma artifacts from pnpm virtual store (dereference symlinks)
-RUN mkdir -p /app/_prisma/dot-prisma /app/_prisma/at-prisma /app/_prisma/prisma && \
-    cp -rL node_modules/.prisma/. /app/_prisma/dot-prisma/ && \
+# node_modules/.prisma does not exist in pnpm's layout; generated client is inside @prisma/client
+RUN mkdir -p /app/_prisma/at-prisma /app/_prisma/prisma && \
     cp -rL node_modules/@prisma/. /app/_prisma/at-prisma/ && \
     cp -rL node_modules/prisma/. /app/_prisma/prisma/
 
@@ -73,7 +73,6 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder /app/_prisma/dot-prisma ./node_modules/.prisma
 COPY --from=builder /app/_prisma/at-prisma ./node_modules/@prisma
 COPY --from=builder /app/_prisma/prisma ./node_modules/prisma
 COPY --from=builder /app/prisma ./prisma
