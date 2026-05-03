@@ -33,6 +33,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN mkdir -p public
 RUN pnpm build
 
+# Dereference pnpm symlinks so COPY --from=builder works without the full .pnpm store
+RUN cp -rL node_modules/@prisma /app/_at-prisma && \
+    cp -rL node_modules/prisma /app/_prisma-cli
+
 FROM node:20-slim AS runner
 WORKDIR /app
 
@@ -67,10 +71,9 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder /app/node_modules/.pnpm ./node_modules/.pnpm
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/_at-prisma ./node_modules/@prisma
+COPY --from=builder /app/_prisma-cli ./node_modules/prisma
 COPY --from=builder /app/prisma ./prisma
 
 USER nextjs
