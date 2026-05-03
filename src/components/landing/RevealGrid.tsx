@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, Children, cloneElement, isValidElement, type ReactElement, type ReactNode, type CSSProperties } from "react";
 
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+
 type RevealGridProps = {
   children: ReactNode;
   className?: string;
@@ -17,23 +19,11 @@ type ElementProps = {
 export function RevealGrid({ children, className }: RevealGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const prefersReducedMotion = usePrefersReducedMotion();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    const handleChange = (event: MediaQueryListEvent) => {
-      setPrefersReducedMotion(event.matches);
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   useEffect(() => {

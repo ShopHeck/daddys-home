@@ -1,12 +1,11 @@
 "use client";
 
-import Handlebars from 'handlebars/dist/handlebars';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import { CodeEditor } from '@/components/dashboard/CodeEditor';
-import { extractVariables, mergeSchemas, type TemplateVariable, type VariableSchema } from '@/lib/template-variables-client';
+import type { TemplateVariable, VariableSchema } from '@/lib/template-variables-client';
 
 type TemplateEditorProps = {
   templateId?: string;
@@ -209,15 +208,33 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
   }, [content, selectedVersionContent]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const timer = setTimeout(() => {
-      try {
-        const extracted = extractVariables(content);
-        setVariableSchema((previous) => (previous ? mergeSchemas(extracted, previous) : extracted));
-      } catch {
-      }
+      void (async () => {
+        try {
+          const { extractVariables, mergeSchemas } = await import('@/lib/template-variables-client');
+
+          if (cancelled) {
+            return;
+          }
+
+          const extracted = extractVariables(content);
+
+          if (cancelled) {
+            return;
+          }
+
+          setVariableSchema((previous) => (previous ? mergeSchemas(extracted, previous) : extracted));
+        } catch {
+        }
+      })();
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [content]);
 
   useEffect(() => {
@@ -284,9 +301,10 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
     };
   }, [pdfUrl]);
 
-  const handlePreview = () => {
+  const handlePreview = async () => {
     try {
       const data = JSON.parse(sampleData) as Record<string, unknown>;
+      const { default: Handlebars } = await import('handlebars/dist/handlebars');
       const compiled = Handlebars.compile(content)(data);
       const styledHtml = css ? `<style>${css}</style>${compiled}` : compiled;
       setPreviewHtml(styledHtml);
@@ -700,7 +718,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
               )}
             </div>
             <div className="flex flex-wrap gap-3">
-              <button className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" onClick={handlePreview} type="button">
+              <button className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" onClick={() => void handlePreview()} type="button">
                 Preview HTML
               </button>
               <button

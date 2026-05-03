@@ -18,10 +18,10 @@ export function Navbar() {
     <header className="sticky top-0 z-40 border-b border-slate-800/60 bg-slate-950">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4 lg:py-5">
         <Link className="flex items-baseline gap-2 text-white group" href="/">
-          <span className="font-serif text-xl tracking-tight" style={{ fontFamily: "'Prata', Georgia, serif" }}>
+          <span className="font-serif text-xl tracking-tight" style={{ fontFamily: "var(--font-prata), Georgia, serif" }}>
             Doc
           </span>
-          <span style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }} className="text-[0.65rem] font-medium uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-300 transition-colors">
+          <span style={{ fontFamily: "var(--font-work-sans), system-ui, sans-serif" }} className="text-[0.65rem] font-medium uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-300 transition-colors">
             Forge
           </span>
         </Link>

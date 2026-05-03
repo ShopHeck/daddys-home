@@ -6,10 +6,10 @@ export default function NotFound() {
       <div className="max-w-md w-full text-center">
         {/* Logotype — match Navbar style */}
         <Link href="/" className="inline-flex items-baseline gap-2 text-white group mb-16 justify-center">
-          <span className="font-serif text-xl tracking-tight" style={{ fontFamily: "'Prata', Georgia, serif" }}>
+          <span className="font-serif text-xl tracking-tight" style={{ fontFamily: "var(--font-prata), Georgia, serif" }}>
             Doc
           </span>
-          <span style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }} className="text-[0.65rem] font-medium uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-300 transition-colors">
+          <span style={{ fontFamily: "var(--font-work-sans), system-ui, sans-serif" }} className="text-[0.65rem] font-medium uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-300 transition-colors">
             Forge
           </span>
         </Link>
