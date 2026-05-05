@@ -34,14 +34,18 @@ RUN mkdir -p public
 RUN pnpm build
 
 # Consolidate Prisma artifacts from pnpm virtual store (dereference symlinks)
-# node_modules/.prisma does not exist in pnpm's layout; generated client is inside @prisma/client
+# pnpm only symlinks direct deps at node_modules/@prisma/; transitive @prisma/* sub-packages
+# (debug, get-platform, fetch-engine, engines, etc.) live only in .pnpm/ virtual store.
+# We must copy ALL of them so require('@prisma/debug') etc. resolve in the runner stage.
 RUN mkdir -p /app/_prisma/at-prisma /app/_prisma/prisma && \
     cp -rL node_modules/@prisma/. /app/_prisma/at-prisma/ && \
-    if [ -d node_modules/prisma/node_modules/@prisma/engines ]; then \
-      cp -rL node_modules/prisma/node_modules/@prisma/engines /app/_prisma/at-prisma/engines; \
-    elif [ -d node_modules/.pnpm/@prisma+engines*/node_modules/@prisma/engines ]; then \
-      cp -rL node_modules/.pnpm/@prisma+engines*/node_modules/@prisma/engines /app/_prisma/at-prisma/engines; \
-    fi && \
+    for pkg_dir in node_modules/.pnpm/@prisma+*/node_modules/@prisma/*; do \
+      if [ -d "$pkg_dir" ]; then \
+        pkg_name=$(basename "$pkg_dir"); \
+        rm -rf /app/_prisma/at-prisma/"$pkg_name"; \
+        cp -rL "$pkg_dir" /app/_prisma/at-prisma/"$pkg_name"; \
+      fi; \
+    done && \
     cp -rL node_modules/prisma/. /app/_prisma/prisma/
 
 FROM node:20-slim AS runner
