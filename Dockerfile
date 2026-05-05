@@ -37,6 +37,11 @@ RUN pnpm build
 # node_modules/.prisma does not exist in pnpm's layout; generated client is inside @prisma/client
 RUN mkdir -p /app/_prisma/at-prisma /app/_prisma/prisma && \
     cp -rL node_modules/@prisma/. /app/_prisma/at-prisma/ && \
+    if [ -d node_modules/prisma/node_modules/@prisma/engines ]; then \
+      cp -rL node_modules/prisma/node_modules/@prisma/engines /app/_prisma/at-prisma/engines; \
+    elif [ -d node_modules/.pnpm/@prisma+engines*/node_modules/@prisma/engines ]; then \
+      cp -rL node_modules/.pnpm/@prisma+engines*/node_modules/@prisma/engines /app/_prisma/at-prisma/engines; \
+    fi && \
     cp -rL node_modules/prisma/. /app/_prisma/prisma/
 
 FROM node:20-slim AS runner
