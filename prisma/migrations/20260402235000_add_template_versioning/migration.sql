@@ -40,3 +40,6 @@ ALTER TABLE "TemplateVersion" ADD CONSTRAINT "TemplateVersion_templateId_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "UsageRecord" ADD CONSTRAINT "UsageRecord_templateVersionId_fkey" FOREIGN KEY ("templateVersionId") REFERENCES "TemplateVersion"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AlterTable (moved from 20260402231831_add_variable_schema)
+ALTER TABLE "TemplateVersion" ADD COLUMN     "variableSchema" JSONB;
