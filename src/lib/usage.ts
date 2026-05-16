@@ -40,8 +40,22 @@ export async function getUsageSummary(teamId: string) {
   const redis = getRedis();
   if (redis) {
     const key = usageCounterKey(teamId, periodStart);
-    const count = await redis.get<number>(key);
-    const used = count ?? 0;
+    let count = await redis.get<number>(key);
+
+    // Cold start: initialize Redis counter from DB on first miss
+    if (count === null) {
+      const dbCount = await prisma.usageRecord.count({
+        where: {
+          teamId,
+          createdAt: { gte: periodStart, lte: periodEnd }
+        }
+      });
+      const ttlSeconds = Math.ceil((periodEnd.getTime() - Date.now()) / 1000) + 86400;
+      await redis.set(key, dbCount, { ex: ttlSeconds });
+      count = dbCount;
+    }
+
+    const used = count;
 
     return {
       tier,
@@ -96,10 +110,33 @@ export async function assertUsageWithinLimit(teamId: string) {
     // Atomic increment — this is the reservation
     const newCount = await redis.incr(key);
 
-    // Ensure key has an expiry (set to end of billing period + 1 day buffer)
+    // If this is a fresh key (first INCR returns 1), seed from DB
     if (newCount === 1) {
+      const dbCount = await prisma.usageRecord.count({
+        where: {
+          teamId,
+          createdAt: { gte: periodStart, lte: periodEnd }
+        }
+      });
+      if (dbCount > 0) {
+        // Set to DB count (our INCR already added 1, so set to dbCount + 1)
+        await redis.set(key, dbCount + 1);
+      }
       const ttlSeconds = Math.ceil((periodEnd.getTime() - Date.now()) / 1000) + 86400;
       await redis.expire(key, ttlSeconds);
+
+      const effectiveCount = dbCount + 1;
+      if (effectiveCount > limit) {
+        await redis.decr(key);
+        const error = new Error('Usage limit exceeded') as Error & {
+          status: number;
+          payload: { error: string; limit: number; used: number; tier: Tier };
+        };
+        error.status = 402;
+        error.payload = { error: 'Usage limit exceeded', limit, used: effectiveCount - 1, tier };
+        throw error;
+      }
+      return { tier, limit, used: effectiveCount, remaining: Math.max(limit - effectiveCount, 0), periodStart, periodEnd };
     }
 
     if (newCount > limit) {
@@ -123,25 +160,22 @@ export async function assertUsageWithinLimit(teamId: string) {
     return { tier, limit, used: newCount, remaining: Math.max(limit - newCount, 0), periodStart, periodEnd };
   }
 
-  // Fallback without Redis: use a serializable read to prevent race conditions.
-  // We use raw SQL with advisory lock to serialize per-team usage checks.
-  const used = await prisma.$queryRaw<[{ count: bigint }]>`
-    SELECT COUNT(*)::bigint as count
-    FROM "UsageRecord"
-    WHERE "teamId" = ${teamId}
-      AND "createdAt" >= ${periodStart}
-      AND "createdAt" <= ${periodEnd}
-    FOR UPDATE
-  `.then((rows: Array<{ count: bigint }>) => Number(rows[0]?.count ?? 0))
-    .catch(async () => {
-      // If FOR UPDATE fails (e.g. in some configurations), fall back to regular count
-      return prisma.usageRecord.count({
-        where: {
-          teamId,
-          createdAt: { gte: periodStart, lte: periodEnd }
-        }
-      });
+  // Fallback without Redis: use PostgreSQL advisory lock per team to serialize checks.
+  const teamHash = Buffer.from(teamId).reduce((acc, byte) => acc * 31 + byte, 0) & 0x7fffffff;
+
+  const used = await prisma.$transaction(async (tx) => {
+    // Acquire an advisory lock scoped to this team's usage check
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(${teamHash})`;
+
+    const count = await tx.usageRecord.count({
+      where: {
+        teamId,
+        createdAt: { gte: periodStart, lte: periodEnd }
+      }
     });
+
+    return count;
+  });
 
   if (used >= limit) {
     const error = new Error('Usage limit exceeded') as Error & {

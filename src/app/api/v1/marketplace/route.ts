@@ -29,8 +29,10 @@ export async function GET(request: Request) {
   const category = url.searchParams.get('category') as MarketplaceCategory | null;
   const search = url.searchParams.get('search') ?? undefined;
   const sortBy = url.searchParams.get('sort') === 'popular' ? 'popular' : 'newest';
-  const page = parseInt(url.searchParams.get('page') ?? '1', 10);
-  const pageSize = parseInt(url.searchParams.get('pageSize') ?? '20', 10);
+  const rawPage = parseInt(url.searchParams.get('page') ?? '1', 10);
+  const rawPageSize = parseInt(url.searchParams.get('pageSize') ?? '20', 10);
+  const page = Number.isFinite(rawPage) ? Math.max(rawPage, 1) : 1;
+  const pageSize = Number.isFinite(rawPageSize) ? Math.min(Math.max(rawPageSize, 1), 100) : 20;
 
   if (category && !MARKETPLACE_CATEGORIES.includes(category)) {
     return NextResponse.json(

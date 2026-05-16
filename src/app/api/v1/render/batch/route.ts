@@ -117,6 +117,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const hasAccess = await requireApiTeamAccess(teamId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
+  }
+
   const url = new URL(request.url);
   const jobId = url.searchParams.get('jobId');
 

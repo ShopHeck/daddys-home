@@ -23,8 +23,10 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const page = Math.max(parseInt(url.searchParams.get('page') ?? '1', 10), 1);
-  const pageSize = Math.min(Math.max(parseInt(url.searchParams.get('pageSize') ?? '50', 10), 1), 100);
+  const rawPage = parseInt(url.searchParams.get('page') ?? '1', 10);
+  const rawPageSize = parseInt(url.searchParams.get('pageSize') ?? '50', 10);
+  const page = Number.isFinite(rawPage) ? Math.max(rawPage, 1) : 1;
+  const pageSize = Number.isFinite(rawPageSize) ? Math.min(Math.max(rawPageSize, 1), 100) : 50;
 
   const [templates, total] = await Promise.all([
     prisma.template.findMany({

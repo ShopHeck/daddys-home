@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
 import { getJob } from '@/lib/batch-queue';
 import { getDownloadUrl } from '@/lib/storage';
+import { requireApiTeamAccess } from '@/lib/teams';
 
 export const runtime = 'nodejs';
 
@@ -21,6 +22,11 @@ export async function GET(
 
   if (!userId || !teamId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const hasAccess = await requireApiTeamAccess(teamId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
   }
 
   const job = await getJob(params.jobId);

@@ -213,30 +213,40 @@ export async function processRetryQueue(maxItems = 20): Promise<number> {
   if (!redis) return 0;
 
   const now = Math.floor(Date.now() / 1000);
+  const claimed: string[] = [];
 
-  // Get delivery IDs that are due for retry (score <= now)
-  const deliveryIds = await redis.zrange(WEBHOOK_RETRY_QUEUE_KEY, 0, now, {
-    byScore: true,
-    count: maxItems,
-    offset: 0,
-  });
+  // Atomically pop items from the sorted set one at a time
+  // zpopmin returns the member with the lowest score
+  for (let i = 0; i < maxItems; i++) {
+    const result = await redis.zpopmin(WEBHOOK_RETRY_QUEUE_KEY, 1);
+    if (!result || result.length === 0) break;
 
-  if (!deliveryIds || deliveryIds.length === 0) {
-    return 0;
+    const item = result[0];
+    if (!item) break;
+    // item is { member, score } or [member, score] depending on client
+    const member = typeof item === 'object' && 'member' in item ? item.member : (item as unknown as string);
+    const score = typeof item === 'object' && 'score' in item ? item.score : 0;
+
+    // Only process if the score (scheduled time) is <= now
+    if (Number(score) > now) {
+      // Put it back — it's not ready yet
+      await redis.zadd(WEBHOOK_RETRY_QUEUE_KEY, { score: Number(score), member: String(member) });
+      break;
+    }
+
+    claimed.push(String(member));
   }
 
-  // Remove them from the queue (claim them)
-  const idsToRemove = deliveryIds as string[];
-  if (idsToRemove.length > 0) {
-    await redis.zrem(WEBHOOK_RETRY_QUEUE_KEY, ...idsToRemove);
+  if (claimed.length === 0) {
+    return 0;
   }
 
   // Process each retry
   await Promise.allSettled(
-    idsToRemove.map((deliveryId) => deliverWebhook(deliveryId))
+    claimed.map((deliveryId) => deliverWebhook(deliveryId))
   );
 
-  return idsToRemove.length;
+  return claimed.length;
 }
 
 /**
