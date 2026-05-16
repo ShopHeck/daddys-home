@@ -1,46 +1,36 @@
 import { NextResponse } from 'next/server';
 
 import { getAuthenticatedApiKeyId, getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
-import { prisma } from '@/lib/prisma';
-import { renderPdfFromTemplate } from '@/lib/renderer';
-import { validateDataAgainstSchema, type VariableSchema } from '@/lib/template-variables';
-import { checkAndSendUsageAlerts } from '@/lib/usage-alerts';
-import { dispatchWebhooks } from '@/lib/webhooks';
-import { getTeamTier, requireApiTeamAccess } from '@/lib/teams';
-import { getUsageSummary, recordUsage, TIER_BATCH_LIMITS } from '@/lib/usage';
-import { uploadPdf } from '@/lib/storage';
-import type { BatchRenderRequestBody, BatchRenderResultItem, Tier } from '@/types';
+import { createBatchJob, getJob } from '@/lib/batch-queue';
+import { BODY_LIMITS, parseJsonBodyWithLimit } from '@/lib/body-limit';
+import { requireApiTeamAccess, getTeamTier } from '@/lib/teams';
+import type { BatchRenderRequestBody } from '@/types';
 
 export const runtime = 'nodejs';
 
-const MAX_CONCURRENCY = 5;
-
-function isObjectRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-async function processWithPool<T>(
-  items: T[],
-  maxConcurrency: number,
-  processor: (item: T, index: number) => Promise<void>
-) {
-  let nextIndex = 0;
-
-  async function worker() {
-    while (nextIndex < items.length) {
-      const index = nextIndex++;
-      await processor(items[index], index);
-    }
-  }
-
-  const workers = Array.from(
-    { length: Math.min(maxConcurrency, items.length) },
-    () => worker()
-  );
-
-  await Promise.all(workers);
-}
-
+/**
+ * POST /api/v1/render/batch
+ *
+ * Submit a batch of render jobs for the same template with different data.
+ * Returns immediately with a job ID for status polling.
+ *
+ * Request body:
+ * {
+ *   "templateId": "tmpl_123",
+ *   "items": [
+ *     { "data": { ... }, "options": { ... } },
+ *     { "data": { ... } }
+ *   ]
+ * }
+ *
+ * Response:
+ * {
+ *   "jobId": "batch_abc123...",
+ *   "status": "pending",
+ *   "total": 10,
+ *   "statusUrl": "/api/v1/render/batch/batch_abc123..."
+ * }
+ */
 export async function POST(request: Request) {
   const userId = getAuthenticatedUserId(request);
   const teamId = getAuthenticatedTeamId(request);
@@ -55,238 +45,99 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
   }
 
-  const body = await request.json().catch(() => null) as BatchRenderRequestBody | null;
+  const parsed = await parseJsonBodyWithLimit<BatchRenderRequestBody>(
+    request,
+    BODY_LIMITS.BATCH_RENDER_REQUEST
+  );
 
-  if (
-    !body
-    || typeof body.templateId !== 'string'
-    || body.templateId.trim().length === 0
-    || !Array.isArray(body.items)
-    || body.items.length === 0
-    || body.items.some((item) => !isObjectRecord(item?.data))
-  ) {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  if ('error' in parsed) {
+    return NextResponse.json({ error: parsed.error }, { status: 413 });
+  }
+
+  const body = parsed.data;
+
+  if (!body?.templateId || !Array.isArray(body.items) || body.items.length === 0) {
+    return NextResponse.json(
+      { error: 'templateId and a non-empty items array are required' },
+      { status: 400 }
+    );
+  }
+
+  // Validate each item has a data object
+  for (let i = 0; i < body.items.length; i++) {
+    const item = body.items[i];
+    if (!item.data || typeof item.data !== 'object' || Array.isArray(item.data)) {
+      return NextResponse.json(
+        { error: `items[${i}].data must be a non-null object` },
+        { status: 400 }
+      );
+    }
   }
 
   const tier = await getTeamTier(teamId);
-  const batchLimit = TIER_BATCH_LIMITS[tier];
 
-  if (body.items.length > batchLimit) {
-    return NextResponse.json({
-      error: 'Batch size exceeds tier limit',
-      limit: batchLimit,
-      requested: body.items.length,
-      tier
-    }, { status: 400 });
+  try {
+    const job = await createBatchJob({
+      teamId,
+      userId,
+      apiKeyId: apiKeyId ?? undefined,
+      templateId: body.templateId,
+      items: body.items,
+      tier,
+    });
+
+    return NextResponse.json(
+      {
+        jobId: job.id,
+        status: job.status,
+        total: job.total,
+        statusUrl: `/api/v1/render/batch/${job.id}`,
+      },
+      { status: 202 }
+    );
+  } catch (error) {
+    const batchError = error as Error & { status?: number; payload?: unknown };
+    if (batchError.status && batchError.payload) {
+      return NextResponse.json(batchError.payload, { status: batchError.status });
+    }
+    throw error;
+  }
+}
+
+/**
+ * GET /api/v1/render/batch?jobId=batch_abc123
+ *
+ * Alternative: poll batch job status via query param.
+ */
+export async function GET(request: Request) {
+  const userId = getAuthenticatedUserId(request);
+  const teamId = getAuthenticatedTeamId(request);
+
+  if (!userId || !teamId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const summary = await getUsageSummary(teamId);
+  const url = new URL(request.url);
+  const jobId = url.searchParams.get('jobId');
 
-  if (summary.remaining < body.items.length) {
-    return NextResponse.json({
-      error: 'Insufficient usage quota for batch',
-      remaining: summary.remaining,
-      requested: body.items.length,
-      tier: summary.tier,
-      limit: summary.limit,
-      used: summary.used
-    }, { status: 402 });
+  if (!jobId) {
+    return NextResponse.json({ error: 'jobId query parameter is required' }, { status: 400 });
   }
 
-  const template = await prisma.template.findFirst({
-    where: {
-      id: body.templateId,
-      teamId
-    },
-    select: {
-      id: true,
-      content: true,
-      css: true,
-      currentVersion: true,
-      variableSchema: true
-    }
-  });
+  const job = await getJob(jobId);
 
-  if (!template) {
-    return NextResponse.json({ error: 'Template not found' }, { status: 404 });
-  }
-
-  const currentVersion = await prisma.templateVersion.findUnique({
-    where: {
-      templateId_version: {
-        templateId: template.id,
-        version: template.currentVersion
-      }
-    },
-    select: { id: true }
-  });
-
-  const results: BatchRenderResultItem[] = [];
-
-  await processWithPool(body.items, MAX_CONCURRENCY, async (item, index) => {
-    const startTime = performance.now();
-    let schemaWarnings: Array<{ path: string; message: string; severity: 'warning' }> = [];
-
-    if (body.validateSchema && template.variableSchema) {
-      schemaWarnings = validateDataAgainstSchema(
-        item.data,
-        template.variableSchema as VariableSchema
-      );
-    }
-
-    try {
-      const pdf = await renderPdfFromTemplate({
-        template: template.content,
-        data: item.data,
-        options: item.options,
-        css: template.css ?? undefined
-      });
-      const durationMs = Math.round(performance.now() - startTime);
-
-      let record: { id: string } | undefined;
-
-      try {
-        record = await recordUsage({
-          teamId,
-          userId,
-          templateId: template.id,
-          templateVersionId: currentVersion?.id,
-          status: 'SUCCESS',
-          durationMs,
-          fileSizeBytes: pdf.length,
-          apiKeyId: apiKeyId ?? undefined
-        });
-      } catch (error) {
-        console.error('Failed to record usage:', error);
-      }
-
-      // Upload PDF to storage in the background (don't block the response)
-      if (record) {
-        void (async () => {
-          try {
-            const storageKey = await uploadPdf({
-              teamId,
-              recordId: record!.id,
-              buffer: pdf,
-            });
-            if (storageKey) {
-              await prisma.usageRecord.update({
-                where: { id: record!.id },
-                data: { storageKey },
-              });
-            }
-          } catch (err) {
-            console.error('PDF storage upload failed:', err);
-          }
-        })();
-      }
-
-      const result: BatchRenderResultItem = {
-        index,
-        status: 'SUCCESS',
-        pdf: pdf.toString('base64'),
-        durationMs,
-        fileSizeBytes: pdf.length
-      };
-
-      if (schemaWarnings.length > 0) {
-        result.schemaWarnings = schemaWarnings;
-      }
-
-      results.push(result);
-
-      void dispatchWebhooks({
-        teamId,
-        event: 'render.completed',
-        data: {
-          templateId: template.id,
-          durationMs,
-          fileSizeBytes: pdf.length,
-          templateVersion: template.currentVersion
-        }
-      });
-    } catch (error) {
-      const durationMs = Math.round(performance.now() - startTime);
-      const rawMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorMessage = error instanceof Error && /(Parse error|Expecting|got)/i.test(error.message)
-        ? 'Invalid template data'
-        : 'Render failed';
-
-      try {
-        await recordUsage({
-          teamId,
-          userId,
-          templateId: template.id,
-          templateVersionId: currentVersion?.id,
-          status: 'FAILED',
-          durationMs,
-          errorMessage: rawMessage,
-          apiKeyId: apiKeyId ?? undefined
-        });
-      } catch (recordUsageError) {
-        console.error('Failed to record usage:', recordUsageError);
-      }
-
-      const result: BatchRenderResultItem = {
-        index,
-        status: 'FAILED',
-        error: errorMessage,
-        durationMs
-      };
-
-      if (schemaWarnings.length > 0) {
-        result.schemaWarnings = schemaWarnings;
-      }
-
-      results.push(result);
-
-      void dispatchWebhooks({
-        teamId,
-        event: 'render.failed',
-        data: {
-          templateId: template.id,
-          durationMs,
-          errorMessage: rawMessage
-        }
-      });
-    }
-  });
-
-  results.sort((a, b) => a.index - b.index);
-
-  void (async () => {
-    try {
-      const updatedSummary = await getUsageSummary(teamId);
-
-      await checkAndSendUsageAlerts({
-        teamId,
-        used: updatedSummary.used,
-        limit: updatedSummary.limit,
-        tier: updatedSummary.tier
-      });
-    } catch (error) {
-      console.error('Usage alert check failed:', error);
-    }
-  })();
-
-  const successCount = results.filter((result) => result.status === 'SUCCESS').length;
-  const failedCount = results.filter((result) => result.status === 'FAILED').length;
-
-  // Report batch failures to Sentry once (not per item)
-  if (failedCount > 0) {
-    import('@sentry/nextjs').then(({ captureMessage }) => {
-      captureMessage(`Batch render: ${failedCount}/${body.items.length} items failed`, {
-        level: 'error',
-        extra: { templateId: template.id, teamId, failedCount },
-      });
-    }).catch(() => {});
+  if (!job || job.teamId !== teamId) {
+    return NextResponse.json({ error: 'Job not found' }, { status: 404 });
   }
 
   return NextResponse.json({
-    templateId: template.id,
-    totalItems: body.items.length,
-    successCount,
-    failedCount,
-    results
+    jobId: job.id,
+    status: job.status,
+    progress: job.progress,
+    total: job.total,
+    results: job.results,
+    createdAt: job.createdAt,
+    completedAt: job.completedAt,
+    error: job.error,
   });
 }

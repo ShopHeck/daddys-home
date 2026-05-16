@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { processRetryQueue } from '@/lib/webhooks';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,6 +9,11 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await prisma.$queryRaw`SELECT 1`;
+
+    // Piggyback webhook retry processing on health check polling.
+    // This ensures retries are processed even without a dedicated cron job.
+    // Non-blocking: errors here don't affect health status.
+    void processRetryQueue(10).catch(() => {});
 
     return NextResponse.json({
       status: 'healthy',

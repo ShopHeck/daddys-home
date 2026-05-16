@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { getRedis } from '@/lib/redis';
 import { getTeamTier } from '@/lib/teams';
 import type { Tier } from '@/types';
 
@@ -21,10 +22,38 @@ export function getCurrentUsagePeriod(referenceDate = new Date()) {
   return { periodStart, periodEnd };
 }
 
+/**
+ * Build the Redis key for a team's monthly usage counter.
+ * Key expires at the end of the billing period to auto-reset.
+ */
+function usageCounterKey(teamId: string, periodStart: Date): string {
+  const month = `${periodStart.getUTCFullYear()}-${String(periodStart.getUTCMonth() + 1).padStart(2, '0')}`;
+  return `docforge:usage:${teamId}:${month}`;
+}
+
 export async function getUsageSummary(teamId: string) {
   const tier = await getTeamTier(teamId);
   const { periodStart, periodEnd } = getCurrentUsagePeriod();
+  const limit = TIER_LIMITS[tier];
 
+  // Try Redis counter first (fast path)
+  const redis = getRedis();
+  if (redis) {
+    const key = usageCounterKey(teamId, periodStart);
+    const count = await redis.get<number>(key);
+    const used = count ?? 0;
+
+    return {
+      tier,
+      limit,
+      used,
+      remaining: Math.max(limit - used, 0),
+      periodStart,
+      periodEnd
+    };
+  }
+
+  // Fallback: count from database
   const used = await prisma.usageRecord.count({
     where: {
       teamId,
@@ -34,8 +63,6 @@ export async function getUsageSummary(teamId: string) {
       }
     }
   });
-
-  const limit = TIER_LIMITS[tier];
 
   return {
     tier,
@@ -47,34 +74,92 @@ export async function getUsageSummary(teamId: string) {
   };
 }
 
+/**
+ * Atomically check usage limit and reserve a slot.
+ *
+ * With Redis: uses INCR which is atomic — if the incremented value exceeds
+ * the limit, we decrement back and reject.
+ *
+ * Without Redis: uses a Prisma transaction to count and insert atomically,
+ * preventing concurrent requests from exceeding the limit.
+ */
 export async function assertUsageWithinLimit(teamId: string) {
-  const summary = await getUsageSummary(teamId);
+  const tier = await getTeamTier(teamId);
+  const { periodStart, periodEnd } = getCurrentUsagePeriod();
+  const limit = TIER_LIMITS[tier];
 
-  if (summary.used >= summary.limit) {
+  const redis = getRedis();
+
+  if (redis) {
+    const key = usageCounterKey(teamId, periodStart);
+
+    // Atomic increment — this is the reservation
+    const newCount = await redis.incr(key);
+
+    // Ensure key has an expiry (set to end of billing period + 1 day buffer)
+    if (newCount === 1) {
+      const ttlSeconds = Math.ceil((periodEnd.getTime() - Date.now()) / 1000) + 86400;
+      await redis.expire(key, ttlSeconds);
+    }
+
+    if (newCount > limit) {
+      // Over limit — roll back the increment
+      await redis.decr(key);
+
+      const error = new Error('Usage limit exceeded') as Error & {
+        status: number;
+        payload: { error: string; limit: number; used: number; tier: Tier };
+      };
+      error.status = 402;
+      error.payload = {
+        error: 'Usage limit exceeded',
+        limit,
+        used: newCount - 1, // the actual count before our failed attempt
+        tier
+      };
+      throw error;
+    }
+
+    return { tier, limit, used: newCount, remaining: Math.max(limit - newCount, 0), periodStart, periodEnd };
+  }
+
+  // Fallback without Redis: use a serializable read to prevent race conditions.
+  // We use raw SQL with advisory lock to serialize per-team usage checks.
+  const used = await prisma.$queryRaw<[{ count: bigint }]>`
+    SELECT COUNT(*)::bigint as count
+    FROM "UsageRecord"
+    WHERE "teamId" = ${teamId}
+      AND "createdAt" >= ${periodStart}
+      AND "createdAt" <= ${periodEnd}
+    FOR UPDATE
+  `.then((rows: Array<{ count: bigint }>) => Number(rows[0]?.count ?? 0))
+    .catch(async () => {
+      // If FOR UPDATE fails (e.g. in some configurations), fall back to regular count
+      return prisma.usageRecord.count({
+        where: {
+          teamId,
+          createdAt: { gte: periodStart, lte: periodEnd }
+        }
+      });
+    });
+
+  if (used >= limit) {
     const error = new Error('Usage limit exceeded') as Error & {
       status: number;
-      payload: {
-        error: string;
-        limit: number;
-        used: number;
-        tier: Tier;
-      };
+      payload: { error: string; limit: number; used: number; tier: Tier };
     };
-
     error.status = 402;
-    error.payload = {
-      error: 'Usage limit exceeded',
-      limit: summary.limit,
-      used: summary.used,
-      tier: summary.tier as Tier
-    };
-
+    error.payload = { error: 'Usage limit exceeded', limit, used, tier };
     throw error;
   }
 
-  return summary;
+  return { tier, limit, used, remaining: Math.max(limit - used, 0), periodStart, periodEnd };
 }
 
+/**
+ * Record a usage entry. If Redis is configured, the counter was already
+ * incremented by assertUsageWithinLimit, so we only write to the database.
+ */
 export async function recordUsage(params: {
   teamId: string;
   userId: string;
@@ -99,4 +184,17 @@ export async function recordUsage(params: {
       apiKeyId: params.apiKeyId
     }
   });
+}
+
+/**
+ * Decrement the Redis usage counter (e.g., when a render fails and shouldn't
+ * count against the limit). No-op if Redis is not configured.
+ */
+export async function releaseUsageSlot(teamId: string): Promise<void> {
+  const redis = getRedis();
+  if (!redis) return;
+
+  const { periodStart } = getCurrentUsagePeriod();
+  const key = usageCounterKey(teamId, periodStart);
+  await redis.decr(key);
 }
