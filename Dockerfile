@@ -38,7 +38,7 @@ RUN pnpm build
 # pnpm only symlinks direct deps at node_modules/@prisma/; transitive @prisma/* sub-packages
 # (debug, get-platform, fetch-engine, engines, etc.) live only in .pnpm/ virtual store.
 # We must copy ALL of them so require('@prisma/debug') etc. resolve in the runner stage.
-RUN mkdir -p /app/_prisma/at-prisma /app/_prisma/prisma && \
+RUN mkdir -p /app/_prisma/at-prisma /app/_prisma/prisma /app/_prisma/dot-prisma && \
     cp -rL node_modules/@prisma/. /app/_prisma/at-prisma/ && \
     for pkg_dir in node_modules/.pnpm/@prisma+*/node_modules/@prisma/*; do \
       if [ -d "$pkg_dir" ]; then \
@@ -47,7 +47,17 @@ RUN mkdir -p /app/_prisma/at-prisma /app/_prisma/prisma && \
         cp -rL "$pkg_dir" /app/_prisma/at-prisma/"$pkg_name"; \
       fi; \
     done && \
-    cp -rL node_modules/prisma/. /app/_prisma/prisma/
+    cp -rL node_modules/prisma/. /app/_prisma/prisma/ && \
+    if [ -d "node_modules/.prisma" ]; then \
+      cp -rL node_modules/.prisma/. /app/_prisma/dot-prisma/; \
+    fi && \
+    for pkg_dir in node_modules/.pnpm/@prisma+client*/node_modules/.prisma/*; do \
+      if [ -d "$pkg_dir" ]; then \
+        pkg_name=$(basename "$pkg_dir"); \
+        mkdir -p /app/_prisma/dot-prisma/"$pkg_name"; \
+        cp -rL "$pkg_dir"/. /app/_prisma/dot-prisma/"$pkg_name"/; \
+      fi; \
+    done
 
 FROM node:20-slim AS runner
 WORKDIR /app
@@ -83,9 +93,10 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-RUN rm -rf node_modules/@prisma node_modules/prisma
+RUN rm -rf node_modules/@prisma node_modules/prisma node_modules/.prisma
 COPY --from=builder /app/_prisma/at-prisma ./node_modules/@prisma
 COPY --from=builder /app/_prisma/prisma ./node_modules/prisma
+COPY --from=builder /app/_prisma/dot-prisma ./node_modules/.prisma
 COPY --from=builder /app/prisma ./prisma
 
 USER nextjs
