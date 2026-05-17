@@ -20,8 +20,9 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ARG DATABASE_URL
 ARG NEXTAUTH_SECRET
 ARG NEXTAUTH_URL
-ENV DATABASE_URL=$DATABASE_URL
-ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+# Use dummy values if not provided as build args (Railway sets them as runtime env vars)
+ENV DATABASE_URL=${DATABASE_URL:-postgresql://dummy:dummy@localhost:5432/dummy}
+ENV NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-build-time-placeholder-not-used-at-runtime}
 ENV NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
 
 COPY --from=deps /app/node_modules ./node_modules
