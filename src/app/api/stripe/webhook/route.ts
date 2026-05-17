@@ -2,11 +2,12 @@ import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 
 import { sendEmail } from '@/lib/email';
+import { stripeLogger } from '@/lib/logger';
 import {
   dunningFinalAttemptEmail,
   dunningFirstAttemptEmail,
   dunningSecondAttemptEmail,
-  paymentConfirmationEmail
+  paymentConfirmationEmail,
 } from '@/lib/email-templates';
 import { prisma } from '@/lib/prisma';
 import { priceIdToTier, stripe } from '@/lib/stripe';
@@ -65,15 +66,15 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       stripeSubscriptionId: subscription.id,
       stripePriceId: priceId,
       stripeCurrentPeriodEnd: getCurrentPeriodEnd(subscription),
-      tier: getTierForSubscription(subscription)
-    }
+      tier: getTierForSubscription(subscription),
+    },
   });
 
   void (async () => {
     try {
       const updatedUser = await prisma.user.findUnique({
         where: { id: userId },
-        select: { email: true, name: true, tier: true }
+        select: { email: true, name: true, tier: true },
       });
 
       if (!updatedUser || updatedUser.tier === 'FREE') {
@@ -91,11 +92,11 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
           name: updatedUser.name || 'there',
           planName,
           amount,
-          dashboardUrl: `${baseUrl}/dashboard`
-        })
+          dashboardUrl: `${baseUrl}/dashboard`,
+        }),
       });
     } catch (error) {
-      console.error('Payment confirmation email failed:', error);
+      stripeLogger.error({ err: error, userId }, 'Payment confirmation email failed');
     }
   })();
 }
@@ -106,12 +107,12 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const user = await prisma.user.findFirst({
     where: customerId
       ? {
-          OR: [{ stripeSubscriptionId: subscription.id }, { stripeCustomerId: customerId }]
+          OR: [{ stripeSubscriptionId: subscription.id }, { stripeCustomerId: customerId }],
         }
       : {
-          stripeSubscriptionId: subscription.id
+          stripeSubscriptionId: subscription.id,
         },
-    select: { id: true }
+    select: { id: true },
   });
 
   if (!user) {
@@ -125,15 +126,15 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       stripeSubscriptionId: subscription.id,
       stripePriceId: priceId,
       stripeCurrentPeriodEnd: getCurrentPeriodEnd(subscription),
-      tier: getTierForSubscription(subscription)
-    }
+      tier: getTierForSubscription(subscription),
+    },
   });
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const user = await prisma.user.findFirst({
     where: { stripeSubscriptionId: subscription.id },
-    select: { id: true }
+    select: { id: true },
   });
 
   if (!user) {
@@ -146,8 +147,8 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       tier: 'FREE',
       stripeSubscriptionId: null,
       stripePriceId: null,
-      stripeCurrentPeriodEnd: null
-    }
+      stripeCurrentPeriodEnd: null,
+    },
   });
 }
 
@@ -179,7 +180,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
       name,
       planName,
       amount,
-      updatePaymentUrl
+      updatePaymentUrl,
     });
   } else if (attemptCount === 2) {
     subject = 'Second notice: your DocForge payment is still failing';
@@ -187,7 +188,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
       name,
       planName,
       amount,
-      updatePaymentUrl
+      updatePaymentUrl,
     });
   } else {
     subject = 'Final notice: your DocForge subscription is at risk';
@@ -195,7 +196,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
       name,
       planName,
       amount,
-      updatePaymentUrl
+      updatePaymentUrl,
     });
   }
 
@@ -204,7 +205,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     subject,
     html,
   }).catch((err) => {
-    console.error(`Dunning email (attempt ${attemptCount}) error:`, err);
+    stripeLogger.error({ err, attemptCount, customerId }, 'Dunning email failed');
   });
 }
 
@@ -244,7 +245,7 @@ export async function POST(request: Request) {
         break;
     }
   } catch (error) {
-    console.error('Stripe webhook handling failed', error);
+    stripeLogger.error({ err: error, eventType: event.type }, 'Stripe webhook handling failed');
     return NextResponse.json({ error: 'Webhook handler failed.' }, { status: 500 });
   }
 

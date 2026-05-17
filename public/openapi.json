@@ -1,0 +1,365 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DocForge API",
+    "version": "1.0.0",
+    "description": "PDF generation API — upload HTML/Handlebars templates, send JSON data, get production-ready PDFs.",
+    "contact": {
+      "name": "DocForge Support",
+      "email": "support@docforge.app",
+      "url": "https://docforge.app/docs"
+    },
+    "license": {
+      "name": "Proprietary"
+    }
+  },
+  "servers": [
+    { "url": "https://docforge.app", "description": "Production" },
+    { "url": "http://localhost:3000", "description": "Local development" }
+  ],
+  "security": [{ "apiKey": [] }],
+  "paths": {
+    "/api/v1/render": {
+      "post": {
+        "operationId": "renderPdf",
+        "summary": "Render a template to PDF",
+        "tags": ["Rendering"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RenderRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF file",
+            "headers": {
+              "X-Cache": { "schema": { "type": "string", "enum": ["HIT", "MISS"] } },
+              "X-RateLimit-Limit": { "schema": { "type": "integer" } },
+              "X-RateLimit-Remaining": { "schema": { "type": "integer" } }
+            },
+            "content": {
+              "application/pdf": { "schema": { "type": "string", "format": "binary" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/UsageLimitExceeded" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/api/v1/render/batch": {
+      "post": {
+        "operationId": "batchRender",
+        "summary": "Submit a batch render job",
+        "tags": ["Rendering"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BatchRenderRequest" }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Job accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BatchJobCreated" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/render/batch/{jobId}": {
+      "get": {
+        "operationId": "getBatchJobStatus",
+        "summary": "Poll batch job status",
+        "tags": ["Rendering"],
+        "parameters": [
+          { "name": "jobId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BatchJobStatus" }
+              }
+            }
+          },
+          "404": { "description": "Job not found" }
+        }
+      }
+    },
+    "/api/v1/templates": {
+      "get": {
+        "operationId": "listTemplates",
+        "summary": "List templates",
+        "tags": ["Templates"],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated template list",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedTemplates" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTemplate",
+        "summary": "Create a template",
+        "tags": ["Templates"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTemplateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Template created" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" }
+        }
+      }
+    },
+    "/api/v1/usage": {
+      "get": {
+        "operationId": "getUsage",
+        "summary": "Get current usage and plan limits",
+        "tags": ["Usage"],
+        "responses": {
+          "200": {
+            "description": "Usage summary",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UsageSummary" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics": {
+      "get": {
+        "operationId": "getAnalytics",
+        "summary": "Get render analytics for current billing period",
+        "tags": ["Analytics"],
+        "parameters": [
+          { "name": "start", "in": "query", "schema": { "type": "string", "format": "date-time" }, "description": "Custom range start (ISO 8601)" },
+          { "name": "end", "in": "query", "schema": { "type": "string", "format": "date-time" }, "description": "Custom range end (ISO 8601)" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Analytics data",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AnalyticsSummary" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace": {
+      "get": {
+        "operationId": "browseMarketplace",
+        "summary": "Browse published templates",
+        "tags": ["Marketplace"],
+        "parameters": [
+          { "name": "category", "in": "query", "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["newest", "popular"] } },
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Paginated marketplace listings" }
+        }
+      }
+    },
+    "/api/v1/marketplace/{templateId}/fork": {
+      "post": {
+        "operationId": "forkTemplate",
+        "summary": "Fork a marketplace template into your team",
+        "tags": ["Marketplace"],
+        "parameters": [
+          { "name": "templateId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "201": { "description": "Template forked" },
+          "404": { "description": "Template not found or not published" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "DocForge API key (starts with df_live_)"
+      }
+    },
+    "schemas": {
+      "RenderRequest": {
+        "type": "object",
+        "required": ["templateId", "data"],
+        "properties": {
+          "templateId": { "type": "string" },
+          "data": { "type": "object", "additionalProperties": true },
+          "options": { "$ref": "#/components/schemas/RenderOptions" },
+          "validateSchema": { "type": "boolean" }
+        }
+      },
+      "RenderOptions": {
+        "type": "object",
+        "properties": {
+          "format": { "type": "string", "enum": ["A4", "Letter"], "default": "A4" },
+          "landscape": { "type": "boolean", "default": false },
+          "margin": {
+            "type": "object",
+            "properties": {
+              "top": { "type": "string" },
+              "bottom": { "type": "string" },
+              "left": { "type": "string" },
+              "right": { "type": "string" }
+            }
+          }
+        }
+      },
+      "BatchRenderRequest": {
+        "type": "object",
+        "required": ["templateId", "items"],
+        "properties": {
+          "templateId": { "type": "string" },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["data"],
+              "properties": {
+                "data": { "type": "object" },
+                "options": { "$ref": "#/components/schemas/RenderOptions" }
+              }
+            }
+          }
+        }
+      },
+      "BatchJobCreated": {
+        "type": "object",
+        "properties": {
+          "jobId": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending"] },
+          "total": { "type": "integer" },
+          "statusUrl": { "type": "string" }
+        }
+      },
+      "BatchJobStatus": {
+        "type": "object",
+        "properties": {
+          "jobId": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "processing", "completed", "failed"] },
+          "progress": { "type": "integer" },
+          "total": { "type": "integer" },
+          "results": { "type": "array", "items": { "type": "object" } },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "completedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateTemplateRequest": {
+        "type": "object",
+        "required": ["name", "content"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 200 },
+          "description": { "type": "string", "maxLength": 2000 },
+          "content": { "type": "string", "description": "HTML or Handlebars template content" },
+          "css": { "type": "string", "description": "Optional CSS to inject" }
+        }
+      },
+      "PaginatedTemplates": {
+        "type": "object",
+        "properties": {
+          "data": { "type": "array", "items": { "type": "object" } },
+          "pagination": { "$ref": "#/components/schemas/Pagination" }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "pageSize": { "type": "integer" },
+          "total": { "type": "integer" },
+          "totalPages": { "type": "integer" }
+        }
+      },
+      "UsageSummary": {
+        "type": "object",
+        "properties": {
+          "tier": { "type": "string", "enum": ["FREE", "PRO", "BUSINESS"] },
+          "limit": { "type": "integer" },
+          "used": { "type": "integer" },
+          "remaining": { "type": "integer" },
+          "periodStart": { "type": "string", "format": "date-time" },
+          "periodEnd": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AnalyticsSummary": {
+        "type": "object",
+        "properties": {
+          "period": { "type": "object" },
+          "tier": { "type": "string" },
+          "usage": { "type": "object" },
+          "renders": { "type": "object" },
+          "latency": { "type": "object", "description": "p50, p75, p95, p99, avg in ms" },
+          "dailyBreakdown": { "type": "array" },
+          "topTemplates": { "type": "array" },
+          "projection": { "type": "object" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "details": { "type": "array", "items": { "type": "object" } }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid request body",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "Unauthorized": {
+        "description": "API key required or invalid",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "UsageLimitExceeded": {
+        "description": "Monthly usage limit reached",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "PayloadTooLarge": {
+        "description": "Request body exceeds size limit",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "RateLimited": {
+        "description": "Rate limit exceeded",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  }
+}

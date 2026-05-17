@@ -34,15 +34,15 @@ export async function POST(request: Request) {
       template: body.content,
       data: body.data,
       options: body.options,
-      css: body.css ?? undefined
+      css: body.css ?? undefined,
     });
 
-    return new NextResponse(pdf, {
+    return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'inline; filename="test-render.pdf"'
-      }
+        'Content-Disposition': 'inline; filename="test-render.pdf"',
+      },
     });
   } catch (error) {
     if (error instanceof Error && /(Parse error|Expecting|got)/i.test(error.message)) {
