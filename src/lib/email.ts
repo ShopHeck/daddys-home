@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { logger } from '@/lib/logger';
 
 let resend: Resend | null = null;
 
@@ -13,11 +14,7 @@ function getResend(): Resend {
   return resend;
 }
 
-export async function sendEmail(params: {
-  to: string;
-  subject: string;
-  html: string;
-}) {
+export async function sendEmail(params: { to: string; subject: string; html: string }) {
   const from = process.env.EMAIL_FROM || 'DocForge <noreply@docforge.dev>';
 
   const { error } = await getResend().emails.send({
@@ -28,7 +25,7 @@ export async function sendEmail(params: {
   });
 
   if (error) {
-    console.error('Failed to send email:', error);
+    logger.error({ err: error, to: params.to, subject: params.subject }, 'Failed to send email');
     throw new Error('Failed to send email');
   }
 }

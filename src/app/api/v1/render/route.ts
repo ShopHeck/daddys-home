@@ -3,9 +3,11 @@ import * as Sentry from '@sentry/nextjs';
 
 import { getAuthenticatedApiKeyId, getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
 import { BODY_LIMITS, parseJsonBodyWithLimit } from '@/lib/body-limit';
+import { renderLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { computeCacheKey, getCachedRender, isCacheEnabled, setCachedRender } from '@/lib/render-cache';
 import { renderPdfFromTemplate } from '@/lib/renderer';
+import { renderRequestSchema, validateBody } from '@/lib/schemas';
 import { validateDataAgainstSchema, type VariableSchema } from '@/lib/template-variables';
 import { checkAndSendUsageAlerts } from '@/lib/usage-alerts';
 import { requireApiTeamAccess } from '@/lib/teams';
@@ -38,9 +40,12 @@ export async function POST(request: Request) {
 
   const body = parsed.data;
 
-  if (!body?.templateId || !body.data || typeof body.data !== 'object' || Array.isArray(body.data)) {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  const validation = validateBody(renderRequestSchema, body);
+  if (!validation.success) {
+    return validation.response;
   }
+
+  const { templateId, data, options, validateSchema: shouldValidateSchema } = validation.data;
 
   try {
     await assertUsageWithinLimit(teamId);
@@ -56,16 +61,16 @@ export async function POST(request: Request) {
 
   const template = await prisma.template.findFirst({
     where: {
-      id: body.templateId,
-      teamId
+      id: templateId,
+      teamId,
     },
     select: {
       id: true,
       content: true,
       css: true,
       currentVersion: true,
-      variableSchema: true
-    }
+      variableSchema: true,
+    },
   });
 
   if (!template) {
@@ -74,30 +79,30 @@ export async function POST(request: Request) {
 
   let validationWarnings: Array<{ path: string; message: string; severity: 'warning' }> = [];
 
-  if (body.validateSchema && template.variableSchema) {
-    validationWarnings = validateDataAgainstSchema(body.data, template.variableSchema as VariableSchema);
+  if (shouldValidateSchema && template.variableSchema) {
+    validationWarnings = validateDataAgainstSchema(data, template.variableSchema as VariableSchema);
   }
 
   const currentVersion = await prisma.templateVersion.findUnique({
     where: {
       templateId_version: {
         templateId: template.id,
-        version: template.currentVersion
-      }
+        version: template.currentVersion,
+      },
     },
-    select: { id: true }
+    select: { id: true },
   });
 
   // --- Render Cache: check for a cached PDF ---
   const cacheHash = computeCacheKey({
     templateId: template.id,
     templateVersion: template.currentVersion,
-    data: body.data,
-    options: body.options,
+    data: data,
+    options: options,
     css: template.css ?? undefined,
   });
 
-  if (isCacheEnabled() && !body.validateSchema) {
+  if (isCacheEnabled() && !shouldValidateSchema) {
     try {
       const cached = await getCachedRender({ teamId, cacheHash });
 
@@ -111,7 +116,7 @@ export async function POST(request: Request) {
           status: 'SUCCESS',
           durationMs: 0,
           fileSizeBytes: cached.pdf.length,
-          apiKeyId: apiKeyId ?? undefined
+          apiKeyId: apiKeyId ?? undefined,
         });
 
         const headers: HeadersInit = {
@@ -124,7 +129,7 @@ export async function POST(request: Request) {
       }
     } catch (err) {
       // Cache lookup failure is non-fatal — fall through to render
-      console.error('Render cache lookup failed:', err);
+      renderLogger.warn({ err, teamId, cacheHash }, 'Render cache lookup failed');
     }
   }
 
@@ -133,9 +138,9 @@ export async function POST(request: Request) {
   try {
     const pdf = await renderPdfFromTemplate({
       template: template.content,
-      data: body.data,
-      options: body.options,
-      css: template.css ?? undefined
+      data: data,
+      options: options,
+      css: template.css ?? undefined,
     });
     const durationMs = Math.round(performance.now() - startTime);
 
@@ -147,7 +152,7 @@ export async function POST(request: Request) {
       status: 'SUCCESS',
       durationMs,
       fileSizeBytes: pdf.length,
-      apiKeyId: apiKeyId ?? undefined
+      apiKeyId: apiKeyId ?? undefined,
     });
 
     // Upload PDF to storage and populate render cache in the background
@@ -165,7 +170,7 @@ export async function POST(request: Request) {
           });
         }
       } catch (err) {
-        console.error('PDF storage upload failed:', err);
+        renderLogger.error({ err, teamId, recordId: record.id }, 'PDF storage upload failed');
       }
 
       // Store in render cache
@@ -178,7 +183,7 @@ export async function POST(request: Request) {
           tier: usageSummary.tier,
         });
       } catch (err) {
-        console.error('Render cache write failed:', err);
+        renderLogger.warn({ err, teamId, cacheHash }, 'Render cache write failed');
       }
     })();
 
@@ -189,8 +194,8 @@ export async function POST(request: Request) {
         templateId: template.id,
         durationMs,
         fileSizeBytes: pdf.length,
-        templateVersion: template.currentVersion
-      }
+        templateVersion: template.currentVersion,
+      },
     });
 
     void (async () => {
@@ -201,10 +206,10 @@ export async function POST(request: Request) {
           teamId,
           used: summary.used,
           limit: summary.limit,
-          tier: summary.tier
+          tier: summary.tier,
         });
       } catch (error) {
-        console.error('Usage alert check failed:', error);
+        renderLogger.error({ err: error, teamId }, 'Usage alert check failed');
       }
     })();
 
@@ -220,7 +225,7 @@ export async function POST(request: Request) {
 
     return new NextResponse(new Uint8Array(pdf), {
       status: 200,
-      headers
+      headers,
     });
   } catch (error) {
     const durationMs = Math.round(performance.now() - startTime);
@@ -239,7 +244,7 @@ export async function POST(request: Request) {
       status: 'FAILED',
       durationMs,
       errorMessage,
-      apiKeyId: apiKeyId ?? undefined
+      apiKeyId: apiKeyId ?? undefined,
     });
 
     void dispatchWebhooks({
@@ -248,8 +253,8 @@ export async function POST(request: Request) {
       data: {
         templateId: template.id,
         durationMs,
-        errorMessage
-      }
+        errorMessage,
+      },
     });
 
     if (error instanceof Error && /(Parse error|Expecting|got)/i.test(error.message)) {

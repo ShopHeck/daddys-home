@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 
 import { prisma } from '@/lib/prisma';
+import { renderLogger } from '@/lib/logger';
 import { getRedis } from '@/lib/redis';
 import { renderPdfFromTemplate } from '@/lib/renderer';
 import { computeCacheKey, getCachedRender, isCacheEnabled, setCachedRender } from '@/lib/render-cache';
@@ -73,7 +74,7 @@ export async function getJob(jobId: string): Promise<BatchJob | null> {
   if (redis) {
     const data = await redis.get<string>(jobRedisKey(jobId));
     if (!data) return null;
-    return typeof data === 'string' ? JSON.parse(data) : data as unknown as BatchJob;
+    return typeof data === 'string' ? JSON.parse(data) : (data as unknown as BatchJob);
   }
   return memoryJobs.get(jobId) ?? null;
 }
@@ -224,7 +225,7 @@ async function processBatchJob(job: BatchJob): Promise<void> {
           buffer: pdf,
         });
       } catch (uploadErr) {
-        console.error('Batch PDF storage upload failed:', uploadErr);
+        renderLogger.error({ err: uploadErr, jobId: job.id, index: i }, 'Batch PDF storage upload failed');
       }
 
       // Record success ONCE after render (and optional upload) complete

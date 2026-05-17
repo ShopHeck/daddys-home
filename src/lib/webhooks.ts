@@ -3,6 +3,7 @@ import { randomBytes, createHmac } from 'crypto';
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
+import { webhookLogger } from '@/lib/logger';
 import { getRedis } from '@/lib/redis';
 import type { Tier } from '@/types';
 
@@ -11,15 +12,15 @@ export const WEBHOOK_EVENTS = [
   'render.failed',
   'template.created',
   'template.updated',
-  'template.deleted'
+  'template.deleted',
 ] as const;
 
-export type WebhookEvent = typeof WEBHOOK_EVENTS[number];
+export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 
 export const TIER_WEBHOOK_LIMITS: Record<Tier, number> = {
   FREE: 1,
   PRO: 5,
-  BUSINESS: 20
+  BUSINESS: 20,
 };
 
 const MAX_DELIVERY_ATTEMPTS = 3;
@@ -44,22 +45,18 @@ export function signPayload(payload: string, secret: string): string {
   return createHmac('sha256', secret).update(payload).digest('hex');
 }
 
-export async function dispatchWebhooks(params: {
-  teamId: string;
-  event: WebhookEvent;
-  data: Record<string, unknown>;
-}) {
+export async function dispatchWebhooks(params: { teamId: string; event: WebhookEvent; data: Record<string, unknown> }) {
   const endpoints = await prisma.webhookEndpoint.findMany({
     where: {
       teamId: params.teamId,
       active: true,
       events: {
-        has: params.event
-      }
+        has: params.event,
+      },
     },
     select: {
-      id: true
-    }
+      id: true,
+    },
   });
 
   await Promise.all(
@@ -69,11 +66,11 @@ export async function dispatchWebhooks(params: {
           endpointId: endpoint.id,
           event: params.event,
           payload: params.data as Prisma.InputJsonObject,
-          status: 'pending'
+          status: 'pending',
         },
         select: {
-          id: true
-        }
+          id: true,
+        },
       });
 
       // Attempt first delivery immediately
@@ -90,21 +87,22 @@ export async function deliverWebhook(deliveryId: string) {
   const delivery = await prisma.webhookDelivery.findUnique({
     where: { id: deliveryId },
     include: {
-      endpoint: true
-    }
+      endpoint: true,
+    },
   });
 
   if (!delivery || delivery.status === 'success' || delivery.status === 'failed') {
     return;
   }
 
-  const data = delivery.payload && typeof delivery.payload === 'object' && !Array.isArray(delivery.payload)
-    ? (delivery.payload as Record<string, unknown>)
-    : {};
+  const data =
+    delivery.payload && typeof delivery.payload === 'object' && !Array.isArray(delivery.payload)
+      ? (delivery.payload as Record<string, unknown>)
+      : {};
   const payloadString = JSON.stringify({
     event: delivery.event,
     data,
-    deliveredAt: new Date().toISOString()
+    deliveredAt: new Date().toISOString(),
   });
   const signature = signPayload(payloadString, delivery.endpoint.secret);
   const attemptedAt = new Date();
@@ -115,10 +113,10 @@ export async function deliverWebhook(deliveryId: string) {
       headers: {
         'Content-Type': 'application/json',
         'X-DocForge-Signature': signature,
-        'X-DocForge-Event': delivery.event
+        'X-DocForge-Event': delivery.event,
       },
       body: payloadString,
-      signal: AbortSignal.timeout(10000)
+      signal: AbortSignal.timeout(10000),
     });
 
     if (response.ok) {
@@ -129,15 +127,21 @@ export async function deliverWebhook(deliveryId: string) {
           attempts: { increment: 1 },
           lastAttemptAt: attemptedAt,
           responseStatus: response.status,
-          responseBody: null
-        }
+          responseBody: null,
+        },
       });
 
       return;
     }
 
     const responseBody = (await response.text().catch(() => '')) || '';
-    await handleDeliveryFailure(delivery.id, delivery.attempts, attemptedAt, response.status, responseBody.slice(0, 1000));
+    await handleDeliveryFailure(
+      delivery.id,
+      delivery.attempts,
+      attemptedAt,
+      response.status,
+      responseBody.slice(0, 1000)
+    );
   } catch (error) {
     const responseBody = error instanceof Error ? error.message : 'Webhook delivery failed';
     await handleDeliveryFailure(delivery.id, delivery.attempts, attemptedAt, null, responseBody.slice(0, 1000));
@@ -164,8 +168,8 @@ async function handleDeliveryFailure(
       attempts: nextAttempts,
       lastAttemptAt: attemptedAt,
       responseStatus,
-      responseBody
-    }
+      responseBody,
+    },
   });
 
   if (!isFinalAttempt) {
@@ -242,9 +246,7 @@ export async function processRetryQueue(maxItems = 20): Promise<number> {
   }
 
   // Process each retry
-  await Promise.allSettled(
-    claimed.map((deliveryId) => deliverWebhook(deliveryId))
-  );
+  await Promise.allSettled(claimed.map((deliveryId) => deliverWebhook(deliveryId)));
 
   return claimed.length;
 }
