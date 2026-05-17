@@ -54,7 +54,7 @@ export function SignupClient() {
     }
 
     const signInResult = await signIn('credentials', {
-      email,
+      email: email.trim().toLowerCase(),
       password,
       redirect: false
     });
