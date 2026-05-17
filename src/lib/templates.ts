@@ -14,6 +14,13 @@ import Handlebars from 'handlebars/dist/cjs/handlebars';
 // Create an isolated Handlebars environment for rendering
 const sandbox = Handlebars.create();
 
+// Explicitly remove dangerous built-in helpers that could bypass the sandbox.
+// Handlebars.create() inherits built-ins; we must actively unregister them.
+sandbox.unregisterHelper('lookup');
+sandbox.unregisterHelper('log');
+sandbox.unregisterHelper('helperMissing');
+sandbox.unregisterHelper('blockHelperMissing');
+
 // --- Safe Helpers Whitelist ---
 // Only these helpers are available in user templates.
 

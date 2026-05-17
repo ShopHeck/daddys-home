@@ -215,6 +215,19 @@ async function processBatchJob(job: BatchJob): Promise<void> {
 
       const durationMs = Math.round(performance.now() - startTime);
 
+      // Upload to storage first (non-critical - if it fails, render still succeeded)
+      let storageKey: string | null = null;
+      try {
+        storageKey = await uploadPdf({
+          teamId: job.teamId,
+          recordId: `batch-${job.id}-${i}`,
+          buffer: pdf,
+        });
+      } catch (uploadErr) {
+        console.error('Batch PDF storage upload failed:', uploadErr);
+      }
+
+      // Record success ONCE after render (and optional upload) complete
       const record = await recordUsage({
         teamId: job.teamId,
         userId: job.userId,
@@ -224,13 +237,6 @@ async function processBatchJob(job: BatchJob): Promise<void> {
         durationMs,
         fileSizeBytes: pdf.length,
         apiKeyId: job.apiKeyId,
-      });
-
-      // Upload to storage
-      const storageKey = await uploadPdf({
-        teamId: job.teamId,
-        recordId: record.id,
-        buffer: pdf,
       });
 
       if (storageKey) {
@@ -246,7 +252,7 @@ async function processBatchJob(job: BatchJob): Promise<void> {
           teamId: job.teamId,
           cacheHash,
           pdf,
-          tier: 'PRO', // batch is at least PRO tier
+          tier: 'PRO',
         }).catch(() => {});
       }
 
@@ -261,9 +267,10 @@ async function processBatchJob(job: BatchJob): Promise<void> {
       const durationMs = Math.round(performance.now() - startTime);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      // Release the usage slot on failure
+      // Release the usage slot since the render failed
       await releaseUsageSlot(job.teamId);
 
+      // Record failure (only one record per attempt)
       await recordUsage({
         teamId: job.teamId,
         userId: job.userId,
