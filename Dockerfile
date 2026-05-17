@@ -94,4 +94,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate resolve --applied 20260402231831_add_variable_schema 2>/dev/null; node node_modules/prisma/build/index.js migrate deploy && node server.js"]
