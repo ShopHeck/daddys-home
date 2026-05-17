@@ -73,7 +73,7 @@ export default async function DashboardOverviewPage() {
     {
       id: 'api-key',
       label: 'Create an API key',
-      description: 'Generate a key to authenticate your render requests.',
+      description: 'Generate a key to authenticate API requests. Pass it as an X-API-Key header in every call to the DocForge API.',
       href: '/dashboard/api-keys',
       ctaLabel: 'Generate API key',
       completed: apiKeyCount > 0,
@@ -81,7 +81,7 @@ export default async function DashboardOverviewPage() {
     {
       id: 'template',
       label: 'Create a template',
-      description: 'Upload an HTML or Handlebars template to render from.',
+      description: 'Design an HTML or Handlebars template with variables like {{name}}. The API will inject your data and render it to PDF.',
       href: '/dashboard/templates/gallery',
       ctaLabel: 'Create template',
       completed: templateCount > 0,
@@ -89,9 +89,9 @@ export default async function DashboardOverviewPage() {
     {
       id: 'render',
       label: 'Generate your first PDF',
-      description: 'Make your first render via the API or the template editor.',
+      description: 'Call POST /api/v1/render with your template ID and data object. The API returns a PDF file you can save or stream to users.',
       href: '/docs',
-      ctaLabel: 'View documentation',
+      ctaLabel: 'View API docs & examples',
       completed: Boolean(firstRender),
     },
   ];

@@ -217,26 +217,83 @@ export function ApiKeysClient() {
       ) : null}
 
       {isRevealOpen && generatedKey ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
-          <div className="w-full max-w-2xl rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-2xl shadow-slate-950/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-2xl shadow-slate-950/50 my-8">
             <h2 className="text-lg font-semibold text-white">Copy your API key now</h2>
-            <p className="mt-2 text-sm text-amber-300">This key won't be shown again. Copy it now.</p>
-            <div className="mt-6 rounded-lg bg-slate-950 p-4 font-mono text-sm text-slate-200">{generatedKey.key}</div>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="mt-2 text-sm text-amber-300">This key won&apos;t be shown again. Copy it now.</p>
+            <div className="mt-4 rounded-lg bg-slate-950 p-4 font-mono text-sm text-slate-200 break-all">{generatedKey.key}</div>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <button
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500"
                 onClick={() => void copyKey()}
                 type="button"
               >
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? 'Copied' : 'Copy to clipboard'}
               </button>
               <button
                 className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600"
                 onClick={() => setIsRevealOpen(false)}
                 type="button"
               >
-                Close
+                Done
               </button>
+            </div>
+
+            <div className="mt-6 border-t border-slate-700 pt-6">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-blue-300">Quick Start</h3>
+              <p className="mt-2 text-sm text-slate-400">
+                Use this key in the <code className="rounded bg-slate-700 px-1.5 py-0.5 text-xs text-slate-200">X-API-Key</code> header of your HTTP requests. Here&apos;s how to render your first PDF:
+              </p>
+
+              <div className="mt-4 space-y-4">
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-slate-300">1. Create a template (or use an existing template ID)</p>
+                  <pre className="overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-300">
+{`curl -X POST ${typeof window !== 'undefined' ? window.location.origin : 'https://your-app.com'}/api/v1/templates \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: ${generatedKey.key}" \\
+  -d '{
+    "name": "My First Template",
+    "content": "<h1>Hello {{name}}</h1><p>Welcome to DocForge!</p>"
+  }'`}
+                  </pre>
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-slate-300">2. Render a PDF from your template</p>
+                  <pre className="overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-300">
+{`curl -X POST ${typeof window !== 'undefined' ? window.location.origin : 'https://your-app.com'}/api/v1/render \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: ${generatedKey.key}" \\
+  -d '{
+    "templateId": "TEMPLATE_ID_FROM_STEP_1",
+    "data": { "name": "World" }
+  }' \\
+  --output document.pdf`}
+                  </pre>
+                </div>
+
+                <div className="flex flex-wrap gap-3 pt-1">
+                  <a
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-400 transition hover:text-blue-300"
+                    href="/docs"
+                  >
+                    Full API docs
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                  <a
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-400 transition hover:text-blue-300"
+                    href="/dashboard/templates/gallery"
+                  >
+                    Browse templates
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </div>
