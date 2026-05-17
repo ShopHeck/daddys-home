@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
+import { BODY_LIMITS, parseJsonBodyWithLimit } from '@/lib/body-limit';
 import { prisma } from '@/lib/prisma';
 import { extractVariables } from '@/lib/template-variables';
 import { createInitialVersion } from '@/lib/template-versions';
@@ -21,21 +22,40 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
   }
 
-  const templates = await prisma.template.findMany({
-    where: { teamId },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      variableSchema: true,
-      currentVersion: true,
-      createdAt: true,
-      updatedAt: true
-    },
-    orderBy: { createdAt: 'desc' }
-  });
+  const url = new URL(request.url);
+  const rawPage = parseInt(url.searchParams.get('page') ?? '1', 10);
+  const rawPageSize = parseInt(url.searchParams.get('pageSize') ?? '50', 10);
+  const page = Number.isFinite(rawPage) ? Math.max(rawPage, 1) : 1;
+  const pageSize = Number.isFinite(rawPageSize) ? Math.min(Math.max(rawPageSize, 1), 100) : 50;
 
-  return NextResponse.json(templates);
+  const [templates, total] = await Promise.all([
+    prisma.template.findMany({
+      where: { teamId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        variableSchema: true,
+        currentVersion: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize
+    }),
+    prisma.template.count({ where: { teamId } })
+  ]);
+
+  return NextResponse.json({
+    data: templates,
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize)
+    }
+  });
 }
 
 export async function POST(request: Request) {
@@ -51,7 +71,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
   }
 
-  const body = await request.json().catch(() => null) as { name?: string; description?: string; content?: string; css?: string } | null;
+  const parsed = await parseJsonBodyWithLimit<{ name?: string; description?: string; content?: string; css?: string }>(
+    request,
+    BODY_LIMITS.TEMPLATE_CONTENT
+  );
+
+  if ('error' in parsed) {
+    return NextResponse.json({ error: parsed.error }, { status: 413 });
+  }
+
+  const body = parsed.data;
 
   if (!body?.name?.trim() || !body?.content?.trim()) {
     return NextResponse.json({ error: 'Name and content are required' }, { status: 400 });

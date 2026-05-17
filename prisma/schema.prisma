@@ -80,10 +80,21 @@ model Template {
   renders        UsageRecord[]
   versions       TemplateVersion[]
   currentVersion Int               @default(1)
+  // Marketplace fields
+  published      Boolean           @default(false)
+  category       String?           // e.g. "invoice", "contract", "report", "certificate", "letter"
+  tags           String[]
+  thumbnailUrl   String?
+  forkCount      Int               @default(0)
+  forkedFromId   String?
+  forkedFrom     Template?         @relation("TemplateForks", fields: [forkedFromId], references: [id], onDelete: SetNull)
+  forks          Template[]        @relation("TemplateForks")
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
   @@index([teamId])
+  @@index([published, category])
+  @@index([published, createdAt])
 }
 
 model TemplateVersion {

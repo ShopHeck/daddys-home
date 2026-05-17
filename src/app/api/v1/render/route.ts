@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 
 import { getAuthenticatedApiKeyId, getAuthenticatedTeamId, getAuthenticatedUserId } from '@/lib/api-key';
+import { BODY_LIMITS, parseJsonBodyWithLimit } from '@/lib/body-limit';
 import { prisma } from '@/lib/prisma';
+import { computeCacheKey, getCachedRender, isCacheEnabled, setCachedRender } from '@/lib/render-cache';
 import { renderPdfFromTemplate } from '@/lib/renderer';
 import { validateDataAgainstSchema, type VariableSchema } from '@/lib/template-variables';
 import { checkAndSendUsageAlerts } from '@/lib/usage-alerts';
@@ -28,7 +30,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden: insufficient team role' }, { status: 403 });
   }
 
-  const body = (await request.json().catch(() => null)) as RenderRequestBody | null;
+  const parsed = await parseJsonBodyWithLimit<RenderRequestBody>(request, BODY_LIMITS.RENDER_REQUEST);
+
+  if ('error' in parsed) {
+    return NextResponse.json({ error: parsed.error }, { status: 413 });
+  }
+
+  const body = parsed.data;
 
   if (!body?.templateId || !body.data || typeof body.data !== 'object' || Array.isArray(body.data)) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
@@ -80,6 +88,46 @@ export async function POST(request: Request) {
     select: { id: true }
   });
 
+  // --- Render Cache: check for a cached PDF ---
+  const cacheHash = computeCacheKey({
+    templateId: template.id,
+    templateVersion: template.currentVersion,
+    data: body.data,
+    options: body.options,
+    css: template.css ?? undefined,
+  });
+
+  if (isCacheEnabled() && !body.validateSchema) {
+    try {
+      const cached = await getCachedRender({ teamId, cacheHash });
+
+      if (cached.hit) {
+        // Still record usage (for billing) even on cache hit
+        await recordUsage({
+          teamId,
+          userId,
+          templateId: template.id,
+          templateVersionId: currentVersion?.id,
+          status: 'SUCCESS',
+          durationMs: 0,
+          fileSizeBytes: cached.pdf.length,
+          apiKeyId: apiKeyId ?? undefined
+        });
+
+        const headers: HeadersInit = {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="document.pdf"',
+          'X-Cache': 'HIT',
+        };
+
+        return new NextResponse(new Uint8Array(cached.pdf), { status: 200, headers });
+      }
+    } catch (err) {
+      // Cache lookup failure is non-fatal — fall through to render
+      console.error('Render cache lookup failed:', err);
+    }
+  }
+
   const startTime = performance.now();
 
   try {
@@ -102,7 +150,7 @@ export async function POST(request: Request) {
       apiKeyId: apiKeyId ?? undefined
     });
 
-    // Upload PDF to storage in the background (don't block the response)
+    // Upload PDF to storage and populate render cache in the background
     void (async () => {
       try {
         const storageKey = await uploadPdf({
@@ -118,6 +166,19 @@ export async function POST(request: Request) {
         }
       } catch (err) {
         console.error('PDF storage upload failed:', err);
+      }
+
+      // Store in render cache
+      try {
+        const usageSummary = await getUsageSummary(teamId);
+        await setCachedRender({
+          teamId,
+          cacheHash,
+          pdf,
+          tier: usageSummary.tier,
+        });
+      } catch (err) {
+        console.error('Render cache write failed:', err);
       }
     })();
 
@@ -149,14 +210,15 @@ export async function POST(request: Request) {
 
     const headers: HeadersInit = {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': 'attachment; filename="document.pdf"'
+      'Content-Disposition': 'attachment; filename="document.pdf"',
+      'X-Cache': 'MISS',
     };
 
     if (validationWarnings.length > 0) {
       headers['X-Schema-Warnings'] = JSON.stringify(validationWarnings);
     }
 
-    return new NextResponse(pdf, {
+    return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers
     });

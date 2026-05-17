@@ -11,6 +11,10 @@ const requiredForBilling = [
   'STRIPE_BUSINESS_PRICE_ID',
 ] as const;
 
+const recommendedVars = [
+  'INTERNAL_API_SECRET',
+] as const;
+
 export function validateEnv(): void {
   const missing: string[] = [];
 
@@ -51,6 +55,30 @@ Missing: ${missingStripe.join(', ')}
 
 Billing features (Pro/Business plans) will be unavailable.
 This is fine for local development, but fix before production.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`);
+  }
+
+  // Warn about recommended security vars
+  const missingRecommended: string[] = [];
+  for (const key of recommendedVars) {
+    if (!process.env[key]) {
+      missingRecommended.push(key);
+    }
+  }
+
+  if (missingRecommended.length > 0) {
+    console.warn(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  SECURITY RECOMMENDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Missing: ${missingRecommended.join(', ')}
+
+INTERNAL_API_SECRET should be a separate secret from NEXTAUTH_SECRET
+to reduce blast radius if either is compromised. Generate with:
+  openssl rand -base64 32
+
+Falling back to NEXTAUTH_SECRET for internal API authentication.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `);
   }

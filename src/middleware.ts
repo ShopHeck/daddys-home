@@ -72,9 +72,10 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  const secret = process.env.NEXTAUTH_SECRET;
+  // Use a dedicated internal secret if available; fall back to NEXTAUTH_SECRET for backward compat.
+  const internalSecret = process.env.INTERNAL_API_SECRET || process.env.NEXTAUTH_SECRET;
 
-  if (!secret) {
+  if (!internalSecret) {
     const response = NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
 
     setRateLimitHeaders(response, ipRateLimit);
@@ -86,7 +87,7 @@ export async function middleware(request: NextRequest) {
     method: 'POST',
     headers: {
       'x-api-key': apiKey,
-      'x-internal-auth': secret
+      'x-internal-auth': internalSecret
     },
     cache: 'no-store'
   });

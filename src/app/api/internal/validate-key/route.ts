@@ -7,7 +7,10 @@ export const runtime = 'nodejs';
 export async function POST(request: Request) {
   const internalAuth = request.headers.get('x-internal-auth');
 
-  if (!process.env.NEXTAUTH_SECRET || internalAuth !== process.env.NEXTAUTH_SECRET) {
+  // Accept either the dedicated INTERNAL_API_SECRET or fall back to NEXTAUTH_SECRET
+  const expectedSecret = process.env.INTERNAL_API_SECRET || process.env.NEXTAUTH_SECRET;
+
+  if (!expectedSecret || internalAuth !== expectedSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
