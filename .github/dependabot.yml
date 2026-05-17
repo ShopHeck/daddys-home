@@ -6,30 +6,22 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     groups:
       production-deps:
-        patterns:
-          - "*"
-        exclude-patterns:
-          - "@types/*"
-          - "eslint*"
-          - "prettier"
-          - "vitest"
-          - "@vitest/*"
+        dependency-type: production
         update-types:
           - minor
           - patch
       dev-deps:
-        patterns:
-          - "@types/*"
-          - "eslint*"
-          - "prettier"
-          - "vitest"
-          - "@vitest/*"
+        dependency-type: development
         update-types:
           - minor
           - patch
+    # Never auto-upgrade major versions — these require manual migration
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
