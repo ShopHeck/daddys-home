@@ -19,7 +19,7 @@ const providers: NextAuthOptions['providers'] = [
       }
 
       const user = await prisma.user.findUnique({
-        where: { email: credentials.email }
+        where: { email: credentials.email.trim().toLowerCase() }
       });
 
       if (!user?.password) {
