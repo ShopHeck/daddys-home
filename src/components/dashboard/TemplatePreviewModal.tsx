@@ -8,7 +8,9 @@ const categoryLabels: Record<GalleryTemplate['category'], string> = {
   business: 'Business',
   education: 'Education',
   finance: 'Finance',
+  freelance: 'Freelance',
   hr: 'HR',
+  legal: 'Legal',
   shipping: 'Shipping'
 };
 

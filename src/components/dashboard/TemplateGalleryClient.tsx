@@ -22,7 +22,9 @@ const categoryLabels: Record<CategoryFilter, string> = {
   business: 'Business',
   education: 'Education',
   finance: 'Finance',
+  freelance: 'Freelance',
   hr: 'HR',
+  legal: 'Legal',
   shipping: 'Shipping'
 };
 
@@ -30,11 +32,13 @@ const categoryBadgeStyles: Record<GalleryTemplate['category'], string> = {
   business: 'border-blue-500/30 bg-blue-500/10 text-blue-200',
   education: 'border-amber-500/30 bg-amber-500/10 text-amber-200',
   finance: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200',
+  freelance: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-200',
   hr: 'border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200',
+  legal: 'border-slate-400/30 bg-slate-400/10 text-slate-200',
   shipping: 'border-orange-500/30 bg-orange-500/10 text-orange-200'
 };
 
-const filters: CategoryFilter[] = ['all', 'business', 'finance', 'hr', 'education', 'shipping'];
+const filters: CategoryFilter[] = ['all', 'business', 'finance', 'freelance', 'legal', 'hr', 'education', 'shipping'];
 
 export function TemplateGalleryClient() {
   const router = useRouter();
