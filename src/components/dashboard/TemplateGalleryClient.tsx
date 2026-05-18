@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -25,7 +25,7 @@ const categoryLabels: Record<CategoryFilter, string> = {
   freelance: 'Freelance',
   hr: 'HR',
   legal: 'Legal',
-  shipping: 'Shipping'
+  shipping: 'Shipping',
 };
 
 const categoryBadgeStyles: Record<GalleryTemplate['category'], string> = {
@@ -35,7 +35,7 @@ const categoryBadgeStyles: Record<GalleryTemplate['category'], string> = {
   freelance: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-200',
   hr: 'border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200',
   legal: 'border-slate-400/30 bg-slate-400/10 text-slate-200',
-  shipping: 'border-orange-500/30 bg-orange-500/10 text-orange-200'
+  shipping: 'border-orange-500/30 bg-orange-500/10 text-orange-200',
 };
 
 const filters: CategoryFilter[] = ['all', 'business', 'finance', 'freelance', 'legal', 'hr', 'education', 'shipping'];
@@ -62,8 +62,8 @@ export function TemplateGalleryClient() {
       body: JSON.stringify({
         name: template.name,
         description: template.description,
-        content: template.content
-      })
+        content: template.content,
+      }),
     });
 
     const payload = (await response.json().catch(() => null)) as CreatedTemplateResponse | { error?: string } | null;
@@ -79,55 +79,76 @@ export function TemplateGalleryClient() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-5 sm:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.2em] text-blue-300">Templates</p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white">Template Gallery</h1>
-          <p className="mt-2 text-sm text-slate-400">Start with a professionally designed template.</p>
+          <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-blue-300">Templates</p>
+          <h1 className="mt-2 sm:mt-4 text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+            Template Gallery
+          </h1>
+          <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-400">
+            Start with a professionally designed template.
+          </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Link className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" href="/dashboard/templates">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <Link
+            className="rounded-lg bg-slate-700 px-3 py-2 sm:px-4 text-xs sm:text-sm font-medium text-slate-200 transition hover:bg-slate-600 active:bg-slate-600"
+            href="/dashboard/templates"
+          >
             Back to Templates
           </Link>
         </div>
       </div>
 
-      {error ? <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">{error}</div> : null}
+      {error ? (
+        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 sm:p-4 text-xs sm:text-sm text-rose-200">
+          {error}
+        </div>
+      ) : null}
 
-      <div className="flex flex-wrap gap-3">
-        {filters.map((filter) => {
-          const isActive = filter === activeFilter;
+      {/* Filter chips - horizontally scrollable on mobile */}
+      <div className="-mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 sm:pb-0 sm:flex-wrap scrollbar-none">
+          {filters.map((filter) => {
+            const isActive = filter === activeFilter;
 
-          return (
-            <button
-              key={filter}
-              className={[
-                'rounded-full border px-4 py-2 text-sm font-medium transition',
-                isActive
-                  ? 'border-blue-500/40 bg-blue-500/15 text-blue-100'
-                  : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600 hover:bg-slate-700'
-              ].join(' ')}
-              onClick={() => setActiveFilter(filter)}
-              type="button"
-            >
-              {categoryLabels[filter]}
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={filter}
+                className={[
+                  'shrink-0 rounded-full border px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium transition active:scale-95',
+                  isActive
+                    ? 'border-blue-500/40 bg-blue-500/15 text-blue-100'
+                    : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600 hover:bg-slate-700',
+                ].join(' ')}
+                onClick={() => setActiveFilter(filter)}
+                type="button"
+              >
+                {categoryLabels[filter]}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      {/* Template grid */}
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
         {filteredTemplates.map((template) => (
-          <article key={template.slug} className="flex h-full flex-col rounded-xl border border-slate-700 bg-slate-800 p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] ${categoryBadgeStyles[template.category]}`}>
+          <article
+            key={template.slug}
+            className="flex h-full flex-col rounded-xl border border-slate-700 bg-slate-800 p-4 sm:p-6 transition-colors active:border-slate-600 sm:hover:border-slate-600"
+          >
+            <div className="flex items-start justify-between gap-3 sm:gap-4">
+              <div className="min-w-0 flex-1">
+                <div
+                  className={`inline-flex rounded-full border px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-medium uppercase tracking-[0.18em] ${categoryBadgeStyles[template.category]}`}
+                >
                   {categoryLabels[template.category]}
                 </div>
-                <h2 className="mt-4 text-xl font-semibold text-white">{template.name}</h2>
+                <h2 className="mt-3 sm:mt-4 text-lg sm:text-xl font-semibold text-white truncate">{template.name}</h2>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-500/30 bg-blue-500/10 text-sm font-semibold text-blue-200">
+              <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-500/30 bg-blue-500/10 text-xs sm:text-sm font-semibold text-blue-200">
                 {template.name
                   .split(' ')
                   .slice(0, 2)
@@ -136,18 +157,20 @@ export function TemplateGalleryClient() {
               </div>
             </div>
 
-            <p className="mt-4 max-h-[4.5rem] flex-1 overflow-hidden text-sm leading-6 text-slate-300">{template.description}</p>
+            <p className="mt-3 sm:mt-4 line-clamp-3 flex-1 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-300">
+              {template.description}
+            </p>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-4 sm:mt-6 flex gap-2 sm:gap-3">
               <button
-                className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600"
+                className="flex-1 sm:flex-none rounded-lg bg-slate-700 px-3 py-2.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-slate-200 transition hover:bg-slate-600 active:bg-slate-600"
                 onClick={() => setSelectedTemplate(template)}
                 type="button"
               >
                 Preview
               </button>
               <button
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex-1 sm:flex-none rounded-lg bg-blue-600 px-3 py-2.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white transition hover:bg-blue-500 active:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={creatingSlug !== null}
                 onClick={() => void handleUseTemplate(template)}
                 type="button"
@@ -160,7 +183,7 @@ export function TemplateGalleryClient() {
       </div>
 
       <TemplatePreviewModal
-        error={selectedTemplate ? error : ""}
+        error={selectedTemplate ? error : ''}
         loading={creatingSlug === selectedTemplate?.slug}
         onClose={() => setSelectedTemplate(null)}
         onUseTemplate={(template) => void handleUseTemplate(template)}
