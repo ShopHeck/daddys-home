@@ -1,8 +1,19 @@
+import {
+  TEMPLATE_SERVICE_CONTRACT, SAMPLE_SERVICE_CONTRACT,
+  TEMPLATE_NDA, SAMPLE_NDA,
+  TEMPLATE_QUOTE, SAMPLE_QUOTE,
+  TEMPLATE_PACKING_SLIP, SAMPLE_PACKING_SLIP,
+  TEMPLATE_PAY_STUB, SAMPLE_PAY_STUB,
+  TEMPLATE_PROJECT_STATUS, SAMPLE_PROJECT_STATUS,
+  TEMPLATE_SOW, SAMPLE_SOW,
+  TEMPLATE_TIMESHEET, SAMPLE_TIMESHEET
+} from './templates';
+
 export type GalleryTemplate = {
   slug: string;
   name: string;
   description: string;
-  category: 'business' | 'finance' | 'hr' | 'education' | 'shipping';
+  category: 'business' | 'finance' | 'hr' | 'education' | 'shipping' | 'legal' | 'freelance';
   content: string;
   sampleData: Record<string, unknown>;
 };
@@ -735,5 +746,69 @@ export const templateGallery: GalleryTemplate[] = [
         'Review carrier contract options to mitigate projected fuel surcharge increases in Q2.'
       ]
     }
+  },
+  {
+    slug: 'service-contract',
+    name: 'Service Contract',
+    description: 'A professional service agreement with numbered clauses, scope definition, payment terms, liability limitations, and dual signature blocks.',
+    category: 'legal',
+    content: TEMPLATE_SERVICE_CONTRACT,
+    sampleData: SAMPLE_SERVICE_CONTRACT
+  },
+  {
+    slug: 'nda',
+    name: 'Non-Disclosure Agreement',
+    description: 'A clean mutual NDA with defined confidential information, exclusions, obligations, term, and governing law sections ready for signing.',
+    category: 'legal',
+    content: TEMPLATE_NDA,
+    sampleData: SAMPLE_NDA
+  },
+  {
+    slug: 'quote-estimate',
+    name: 'Quote / Estimate',
+    description: 'A detailed project quote with validity period, itemized pricing, optional discount, acceptance terms, and professional company branding.',
+    category: 'freelance',
+    content: TEMPLATE_QUOTE,
+    sampleData: SAMPLE_QUOTE
+  },
+  {
+    slug: 'packing-slip',
+    name: 'Packing Slip',
+    description: 'A warehouse-ready packing slip with order reference, ship-to address, itemized contents with quantities, and handling instructions.',
+    category: 'shipping',
+    content: TEMPLATE_PACKING_SLIP,
+    sampleData: SAMPLE_PACKING_SLIP
+  },
+  {
+    slug: 'pay-stub',
+    name: 'Pay Stub',
+    description: 'A detailed employee pay stub with earnings breakdown, deductions, taxes, YTD totals, and pay period information for payroll processing.',
+    category: 'hr',
+    content: TEMPLATE_PAY_STUB,
+    sampleData: SAMPLE_PAY_STUB
+  },
+  {
+    slug: 'project-status-report',
+    name: 'Project Status Report',
+    description: 'A structured weekly project status report with RAG indicators, milestone tracker, risk log, and upcoming deliverables for stakeholder updates.',
+    category: 'business',
+    content: TEMPLATE_PROJECT_STATUS,
+    sampleData: SAMPLE_PROJECT_STATUS
+  },
+  {
+    slug: 'scope-of-work',
+    name: 'Scope of Work',
+    description: 'A comprehensive SOW document with project objectives, deliverables, timeline, acceptance criteria, and assumptions for client alignment.',
+    category: 'freelance',
+    content: TEMPLATE_SOW,
+    sampleData: SAMPLE_SOW
+  },
+  {
+    slug: 'timesheet',
+    name: 'Consulting Timesheet',
+    description: 'A professional weekly timesheet with daily hour entries, project/task breakdown, rate calculations, and approval signature for billing.',
+    category: 'freelance',
+    content: TEMPLATE_TIMESHEET,
+    sampleData: SAMPLE_TIMESHEET
   }
 ];
