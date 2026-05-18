@@ -1,5 +1,25 @@
 import Handlebars from 'handlebars/dist/cjs/handlebars';
 
+// Re-export template constants used by template-gallery.ts
+export {
+  TEMPLATE_SERVICE_CONTRACT,
+  SAMPLE_SERVICE_CONTRACT,
+  TEMPLATE_NDA,
+  SAMPLE_NDA,
+  TEMPLATE_QUOTE,
+  SAMPLE_QUOTE,
+  TEMPLATE_PACKING_SLIP,
+  SAMPLE_PACKING_SLIP,
+  TEMPLATE_PAY_STUB,
+  SAMPLE_PAY_STUB,
+  TEMPLATE_PROJECT_STATUS,
+  SAMPLE_PROJECT_STATUS,
+  TEMPLATE_SOW,
+  SAMPLE_SOW,
+  TEMPLATE_TIMESHEET,
+  SAMPLE_TIMESHEET,
+} from './template-constants';
+
 /**
  * Sandboxed Handlebars template compilation.
  *
@@ -159,12 +179,18 @@ sandbox.registerHelper('math', function (a: unknown, operator: unknown, b: unkno
   const numA = Number(a);
   const numB = Number(b);
   switch (operator) {
-    case '+': return numA + numB;
-    case '-': return numA - numB;
-    case '*': return numA * numB;
-    case '/': return numB !== 0 ? numA / numB : 0;
-    case '%': return numB !== 0 ? numA % numB : 0;
-    default: return 0;
+    case '+':
+      return numA + numB;
+    case '-':
+      return numA - numB;
+    case '*':
+      return numA * numB;
+    case '/':
+      return numB !== 0 ? numA / numB : 0;
+    case '%':
+      return numB !== 0 ? numA % numB : 0;
+    default:
+      return 0;
   }
 });
 
@@ -181,8 +207,8 @@ sandbox.registerHelper('math', function (a: unknown, operator: unknown, b: unkno
  */
 export function compileTemplate(template: string, data: Record<string, unknown>): string {
   const compiled = sandbox.compile(template, {
-    noEscape: false,      // HTML-escape output by default (use {{{triple}}} for raw)
-    strict: true,         // Fail on missing variables rather than silently outputting empty
+    noEscape: false, // HTML-escape output by default (use {{{triple}}} for raw)
+    strict: true, // Fail on missing variables rather than silently outputting empty
     assumeObjects: false, // Don't assume dot-separated paths resolve
     preventIndent: false,
   });
@@ -200,7 +226,16 @@ export function compileTemplate(template: string, data: Record<string, unknown>)
  * List of helper names available in user templates (for documentation/UI).
  */
 export const AVAILABLE_HELPERS = [
-  'if', 'unless', 'each', 'with',
-  'formatDate', 'uppercase', 'lowercase',
-  'eq', 'ne', 'gt', 'lt', 'math',
+  'if',
+  'unless',
+  'each',
+  'with',
+  'formatDate',
+  'uppercase',
+  'lowercase',
+  'eq',
+  'ne',
+  'gt',
+  'lt',
+  'math',
 ] as const;
