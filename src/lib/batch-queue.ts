@@ -8,7 +8,7 @@ import { computeCacheKey, getCachedRender, isCacheEnabled, setCachedRender } fro
 import { uploadPdf } from '@/lib/storage';
 import { assertUsageWithinLimit, recordUsage, releaseUsageSlot, TIER_BATCH_LIMITS } from '@/lib/usage';
 import { dispatchWebhooks } from '@/lib/webhooks';
-import type { BatchRenderItem, RenderOptions, Tier } from '@/types';
+import type { BatchRenderItem, Tier } from '@/types';
 
 export type BatchJob = {
   id: string;

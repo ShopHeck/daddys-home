@@ -1,4 +1,4 @@
-import { S3Client, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 import { prisma } from '@/lib/prisma';
 import { storageLogger } from '@/lib/logger';

@@ -3,7 +3,6 @@ import { randomBytes, createHmac } from 'crypto';
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
-import { webhookLogger } from '@/lib/logger';
 import { getRedis } from '@/lib/redis';
 import type { Tier } from '@/types';
 
