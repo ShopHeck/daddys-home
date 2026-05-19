@@ -2,7 +2,6 @@ import { prisma } from '@/lib/prisma';
 import { createInitialVersion } from '@/lib/template-versions';
 import { extractVariables } from '@/lib/template-variables';
 import { dispatchWebhooks } from '@/lib/webhooks';
-import type { Tier } from '@/types';
 
 export const MARKETPLACE_CATEGORIES = [
   'invoice',
@@ -16,7 +15,7 @@ export const MARKETPLACE_CATEGORIES = [
   'other',
 ] as const;
 
-export type MarketplaceCategory = typeof MARKETPLACE_CATEGORIES[number];
+export type MarketplaceCategory = (typeof MARKETPLACE_CATEGORIES)[number];
 
 const marketplaceSelect = {
   id: true,
@@ -111,10 +110,7 @@ export async function listMarketplaceTemplates(params: {
       : {}),
   };
 
-  const orderBy =
-    sortBy === 'popular'
-      ? { forkCount: 'desc' as const }
-      : { createdAt: 'desc' as const };
+  const orderBy = sortBy === 'popular' ? { forkCount: 'desc' as const } : { createdAt: 'desc' as const };
 
   const [templates, total] = await Promise.all([
     prisma.template.findMany({
@@ -177,7 +173,10 @@ export async function publishTemplate(params: {
     data: {
       published: true,
       category: params.category,
-      tags: params.tags.map((t) => t.toLowerCase().trim()).filter(Boolean).slice(0, 10),
+      tags: params.tags
+        .map((t) => t.toLowerCase().trim())
+        .filter(Boolean)
+        .slice(0, 10),
     },
     select: marketplaceSelect,
   });
@@ -272,10 +271,12 @@ export async function forkTemplate(params: {
   });
 
   // Increment fork count on the source (non-blocking)
-  void prisma.template.update({
-    where: { id: source.id },
-    data: { forkCount: { increment: 1 } },
-  }).catch(() => {});
+  void prisma.template
+    .update({
+      where: { id: source.id },
+      data: { forkCount: { increment: 1 } },
+    })
+    .catch(() => {});
 
   // Dispatch webhook for the team that owns the forked template
   void dispatchWebhooks({

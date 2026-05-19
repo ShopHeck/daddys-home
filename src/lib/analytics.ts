@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { getRedis } from '@/lib/redis';
 import { getCurrentUsagePeriod, TIER_LIMITS } from '@/lib/usage';
 import { getTeamTier } from '@/lib/teams';
 import type { Tier } from '@/types';
@@ -170,7 +169,7 @@ export async function getTeamAnalytics(teamId: string): Promise<AnalyticsSummary
   const daysInMonth = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
   const daysRemaining = Math.max(0, daysInMonth - daysElapsed);
   const dailyAverage = Math.round(total / daysElapsed);
-  const estimatedEndOfMonth = total + (dailyAverage * daysRemaining);
+  const estimatedEndOfMonth = total + dailyAverage * daysRemaining;
 
   const projection: UsageProjection = {
     estimatedEndOfMonth,

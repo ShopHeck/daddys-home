@@ -6,25 +6,27 @@ import { RevealGrid } from '@/components/landing/RevealGrid';
 
 export const metadata: Metadata = {
   title: 'DocForge — Generate PDFs from HTML Templates via API',
-  description: 'DocForge gives your product team a fast, reliable document pipeline for invoices, proposals, and branded PDFs without managing rendering infrastructure.',
+  description:
+    'DocForge gives your product team a fast, reliable document pipeline for invoices, proposals, and branded PDFs without managing rendering infrastructure.',
 };
 
 const howItWorks = [
   {
     step: '01',
     title: 'Upload template',
-    description: 'Store HTML and Handlebars templates once, then reuse them across invoices, contracts, and reports.'
+    description: 'Store HTML and Handlebars templates once, then reuse them across invoices, contracts, and reports.',
   },
   {
     step: '02',
     title: 'Send data via API',
-    description: 'POST structured JSON payloads with your template ID and render options from any backend or job queue.'
+    description:
+      'POST structured JSON payloads with your template ID and render options from any backend or job queue.',
   },
   {
     step: '03',
     title: 'Get PDF back',
-    description: 'Receive production-ready PDFs in seconds with predictable limits, analytics, and usage controls.'
-  }
+    description: 'Receive production-ready PDFs in seconds with predictable limits, analytics, and usage controls.',
+  },
 ];
 
 const features = [
@@ -34,11 +36,13 @@ const features = [
   },
   {
     title: 'Template versioning',
-    description: 'Track every change to your templates with full version history. Roll back anytime without breaking live integrations.',
+    description:
+      'Track every change to your templates with full version history. Roll back anytime without breaking live integrations.',
   },
   {
     title: 'Batch rendering',
-    description: 'Generate up to 50 PDFs in a single API call. Perfect for monthly invoices, reports, and bulk document runs.',
+    description:
+      'Generate up to 50 PDFs in a single API call. Perfect for monthly invoices, reports, and bulk document runs.',
   },
   {
     title: 'Custom CSS & fonts',
@@ -46,11 +50,13 @@ const features = [
   },
   {
     title: 'Webhooks & storage',
-    description: 'Get notified when renders complete. Auto-store PDFs in S3-compatible storage with signed download links.',
+    description:
+      'Get notified when renders complete. Auto-store PDFs in S3-compatible storage with signed download links.',
   },
   {
     title: 'Team workspaces',
-    description: 'Collaborate with role-based access control. Manage templates, API keys, and billing across your organization.',
+    description:
+      'Collaborate with role-based access control. Manage templates, API keys, and billing across your organization.',
   },
 ];
 
@@ -69,19 +75,22 @@ const comparisonRows = [
 
 const testimonials = [
   {
-    quote: "We replaced our entire PDF generation pipeline with DocForge in an afternoon. Our invoicing system went from flaky wkhtmltopdf crashes to rock-solid renders.",
+    quote:
+      'We replaced our entire PDF generation pipeline with DocForge in an afternoon. Our invoicing system went from flaky wkhtmltopdf crashes to rock-solid renders.',
     author: 'Sarah Chen',
     role: 'CTO',
     company: 'Meridian Billing',
   },
   {
-    quote: "The template versioning alone sold us. We can iterate on document layouts without worrying about breaking production. Batch rendering 10k invoices monthly just works.",
+    quote:
+      'The template versioning alone sold us. We can iterate on document layouts without worrying about breaking production. Batch rendering 10k invoices monthly just works.',
     author: 'Marcus Rivera',
     role: 'Lead Engineer',
     company: 'NorthPeak Finance',
   },
   {
-    quote: "Our team was spending 20 hours a month maintaining Puppeteer infrastructure. DocForge gave us that time back and the PDFs actually look better.",
+    quote:
+      'Our team was spending 20 hours a month maintaining Puppeteer infrastructure. DocForge gave us that time back and the PDFs actually look better.',
     author: 'Jamie Okafor',
     role: 'Engineering Manager',
     company: 'Clearpath Legal',
@@ -93,21 +102,37 @@ const tiers = [
     name: 'Free' as const,
     price: '$0',
     docs: '50 docs/month',
-    features: ['Handlebars templating', 'PDF rendering', 'API access', 'Usage analytics']
+    features: ['Handlebars templating', 'PDF rendering', 'API access', 'Usage analytics'],
   },
   {
     name: 'Pro' as const,
     price: '$29/mo',
     docs: '5,000 docs/month',
-    features: ['Handlebars templating', 'PDF rendering', 'API access', 'Usage analytics', 'Priority rendering', 'Email support'],
-    featured: true
+    features: [
+      'Handlebars templating',
+      'PDF rendering',
+      'API access',
+      'Usage analytics',
+      'Priority rendering',
+      'Email support',
+    ],
+    featured: true,
   },
   {
     name: 'Business' as const,
     price: '$99/mo',
     docs: '50,000 docs/month',
-    features: ['Handlebars templating', 'PDF rendering', 'API access', 'Usage analytics', 'Priority rendering', 'Custom templates', 'Dedicated support', 'SLA']
-  }
+    features: [
+      'Handlebars templating',
+      'PDF rendering',
+      'API access',
+      'Usage analytics',
+      'Priority rendering',
+      'Custom templates',
+      'Dedicated support',
+      'SLA',
+    ],
+  },
 ];
 
 const codeExample = `curl -X POST https://api.docforge.app/api/v1/render \
@@ -156,17 +181,14 @@ export default function HomePage() {
   };
 
   return (
-    <main style={{ fontFamily: "var(--font-work-sans), system-ui, sans-serif" }}>
+    <main style={{ fontFamily: 'var(--font-work-sans), system-ui, sans-serif' }}>
       <style>{`
         .font-display {
           font-family: var(--font-prata), Georgia, serif;
         }
       `}</style>
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <section className="relative px-6 pt-20 pb-24 lg:pt-32 lg:pb-40 overflow-hidden">
         <div className="relative mx-auto max-w-7xl">
@@ -176,22 +198,25 @@ export default function HomePage() {
                 Document generation API
               </p>
               <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl leading-[0.95] tracking-tight text-white">
-                Generate<br />
-                <span style={{ color: 'oklch(0.65 0.15 250)' }}>PDFs</span> from<br />
+                Generate
+                <br />
+                <span style={{ color: 'oklch(0.65 0.15 250)' }}>PDFs</span> from
+                <br />
                 HTML templates
               </h1>
               <p className="mt-10 max-w-xl text-lg font-normal leading-relaxed text-slate-400">
-                DocForge gives your product team a fast, reliable document pipeline for invoices, proposals, and branded PDFs — without managing rendering infrastructure.
+                DocForge gives your product team a fast, reliable document pipeline for invoices, proposals, and branded
+                PDFs — without managing rendering infrastructure.
               </p>
               <div className="mt-12 flex flex-col sm:flex-row gap-4">
-                <Link 
-                  href="/auth/signup" 
+                <Link
+                  href="/auth/signup"
                   className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-slate-950 bg-white hover:bg-slate-100 transition-colors"
                 >
                   Start free
                 </Link>
-                <Link 
-                  href="/docs" 
+                <Link
+                  href="/docs"
                   className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white border border-slate-700 hover:border-slate-500 transition-colors"
                 >
                   Read documentation
@@ -202,10 +227,17 @@ export default function HomePage() {
             <div className="mt-16 lg:mt-0 lg:col-span-5 lg:col-start-8">
               <div className="bg-slate-900 border border-slate-800">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
-                  <span className="text-xs font-medium uppercase tracking-wide text-slate-500">POST /api/v1/render</span>
+                  <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    POST /api/v1/render
+                  </span>
                   <span className="flex h-2 w-2 rounded-full" style={{ backgroundColor: 'oklch(0.65 0.18 145)' }} />
                 </div>
-                <pre className="p-4 overflow-x-auto text-sm text-slate-300 font-mono" style={{ fontSize: '0.8125rem', lineHeight: 1.6 }}>{codeExample}</pre>
+                <pre
+                  className="p-4 overflow-x-auto text-sm text-slate-300 font-mono"
+                  style={{ fontSize: '0.8125rem', lineHeight: 1.6 }}
+                >
+                  {codeExample}
+                </pre>
               </div>
             </div>
           </div>
@@ -217,7 +249,9 @@ export default function HomePage() {
           <div className="max-w-2xl">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 mb-4">How it works</p>
             <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white">
-              From template<br />to PDF
+              From template
+              <br />
+              to PDF
             </h2>
           </div>
           <div className="mt-16 grid gap-12 lg:grid-cols-3">
@@ -264,12 +298,16 @@ export default function HomePage() {
                 Ship without infrastructure
               </h2>
               <p className="mt-6 text-base text-slate-400 leading-relaxed max-w-md">
-                Use a stored template ID, pass in structured JSON, and let DocForge handle rendering, tier enforcement, and analytics.
+                Use a stored template ID, pass in structured JSON, and let DocForge handle rendering, tier enforcement,
+                and analytics.
               </p>
             </div>
             <div className="mt-10 lg:mt-0 lg:col-span-6 lg:col-start-7">
               <div className="bg-slate-900 border border-slate-800">
-                <pre className="p-5 overflow-x-auto text-sm text-slate-300 font-mono" style={{ fontSize: '0.8125rem', lineHeight: 1.7 }}>{`await fetch('/api/v1/render', {
+                <pre
+                  className="p-5 overflow-x-auto text-sm text-slate-300 font-mono"
+                  style={{ fontSize: '0.8125rem', lineHeight: 1.7 }}
+                >{`await fetch('/api/v1/render', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -301,10 +339,18 @@ export default function HomePage() {
               <thead>
                 <tr className="border-b border-slate-800">
                   <th className="pb-4 text-xs font-medium uppercase tracking-wide text-slate-500">Feature</th>
-                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-white text-center w-32">DocForge</th>
-                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-slate-500 text-center w-32">wkhtmltopdf</th>
-                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-slate-500 text-center w-32">Puppeteer DIY</th>
-                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-slate-500 text-center w-32">DocRaptor</th>
+                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-white text-center w-32">
+                    DocForge
+                  </th>
+                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-slate-500 text-center w-32">
+                    wkhtmltopdf
+                  </th>
+                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-slate-500 text-center w-32">
+                    Puppeteer DIY
+                  </th>
+                  <th className="pb-4 text-xs font-medium uppercase tracking-wide text-slate-500 text-center w-32">
+                    DocRaptor
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -312,7 +358,10 @@ export default function HomePage() {
                   <tr key={row.feature}>
                     <td className="px-6 py-4 text-sm text-slate-300">{row.feature}</td>
                     <td className="px-6 py-4 text-center">
-                      <span className={row.docforge ? 'font-medium' : 'text-slate-700'} style={{ color: row.docforge ? 'oklch(0.65 0.18 145)' : undefined }}>
+                      <span
+                        className={row.docforge ? 'font-medium' : 'text-slate-700'}
+                        style={{ color: row.docforge ? 'oklch(0.65 0.18 145)' : undefined }}
+                      >
                         {row.docforge ? '✓' : '✗'}
                       </span>
                     </td>
@@ -342,26 +391,29 @@ export default function HomePage() {
       <section className="px-6 py-20 lg:py-28 border-t border-slate-800/60">
         <div className="mx-auto max-w-7xl">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 mb-4">Testimonials</p>
-          <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white">
-            Trusted by engineering teams
-          </h2>
+          <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white">Trusted by engineering teams</h2>
 
           <div className="mt-16 grid gap-8 lg:grid-cols-3">
             {testimonials.map((testimonial) => (
               <div key={testimonial.author} className="flex flex-col">
                 <blockquote className="text-lg text-slate-300 leading-relaxed font-display">
-                  "{testimonial.quote}"
+                  &ldquo;{testimonial.quote}&rdquo;
                 </blockquote>
                 <div className="mt-8 flex items-center gap-3">
-                  <div 
+                  <div
                     className="h-10 w-10 flex items-center justify-center text-sm font-medium text-white"
                     style={{ backgroundColor: 'oklch(0.35 0.05 250)' }}
                   >
-                    {testimonial.author.split(' ').map(n => n[0]).join('')}
+                    {testimonial.author
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white">{testimonial.author}</p>
-                    <p className="text-xs text-slate-500">{testimonial.role}, {testimonial.company}</p>
+                    <p className="text-xs text-slate-500">
+                      {testimonial.role}, {testimonial.company}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -373,23 +425,21 @@ export default function HomePage() {
       <section id="pricing" className="px-6 py-20 lg:py-28">
         <div className="mx-auto max-w-7xl">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 mb-4">Pricing</p>
-          <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white">
-            Predictable plans
-          </h2>
+          <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white">Predictable plans</h2>
 
           <div className="mt-16 lg:grid lg:grid-cols-12 lg:gap-6">
             {tiers.map((tier, index) => (
-              <div 
-                key={tier.name} 
+              <div
+                key={tier.name}
                 className={`${index === 1 ? 'lg:col-span-5' : 'lg:col-span-3'} ${index === 0 ? 'lg:col-start-1' : index === 1 ? 'lg:col-start-5' : 'lg:col-start-10'} mb-6 lg:mb-0`}
               >
-                <div className={`border h-full flex flex-col ${tier.featured ? 'border-slate-600 bg-slate-900' : 'border-slate-800 bg-slate-950'}`}>
+                <div
+                  className={`border h-full flex flex-col ${tier.featured ? 'border-slate-600 bg-slate-900' : 'border-slate-800 bg-slate-950'}`}
+                >
                   <div className="p-6">
                     <div className="flex items-baseline justify-between">
                       <span className="text-xs font-medium uppercase tracking-wide text-slate-500">{tier.name}</span>
-                      {tier.featured && (
-                        <span className="text-xs text-slate-400">Popular</span>
-                      )}
+                      {tier.featured && <span className="text-xs text-slate-400">Popular</span>}
                     </div>
                     <p className="mt-4 font-display text-4xl text-white">{tier.price}</p>
                     <p className="mt-1 text-sm text-slate-500">{tier.docs}</p>
@@ -397,7 +447,9 @@ export default function HomePage() {
                   <div className="px-6 pb-6 flex-1">
                     <ul className="space-y-2">
                       {tier.features.map((feature) => (
-                        <li key={feature} className="text-sm text-slate-400">{feature}</li>
+                        <li key={feature} className="text-sm text-slate-400">
+                          {feature}
+                        </li>
                       ))}
                     </ul>
                   </div>
@@ -416,7 +468,8 @@ export default function HomePage() {
           <div className="lg:grid lg:grid-cols-12 lg:gap-12 lg:items-center">
             <div className="lg:col-span-7">
               <h2 className="font-display text-4xl sm:text-5xl tracking-tight text-white">
-                Start generating PDFs<br />
+                Start generating PDFs
+                <br />
                 in five minutes
               </h2>
               <p className="mt-6 text-base text-slate-400 leading-relaxed max-w-lg">
@@ -425,14 +478,14 @@ export default function HomePage() {
             </div>
             <div className="mt-10 lg:mt-0 lg:col-span-4 lg:col-start-9">
               <div className="flex flex-col gap-4">
-                <Link 
-                  href="/auth/signup" 
+                <Link
+                  href="/auth/signup"
                   className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-slate-950 bg-white hover:bg-slate-100 transition-colors"
                 >
                   Create free account
                 </Link>
-                <Link 
-                  href="/docs" 
+                <Link
+                  href="/docs"
                   className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white border border-slate-700 hover:border-slate-500 transition-colors"
                 >
                   View API docs
@@ -449,7 +502,12 @@ export default function HomePage() {
             <div>
               <div className="flex items-baseline gap-2">
                 <span className="font-display text-lg tracking-tight text-white">Doc</span>
-                <span style={{ fontFamily: "var(--font-work-sans), system-ui, sans-serif" }} className="text-[0.6rem] font-medium uppercase tracking-[0.25em] text-slate-500">Forge</span>
+                <span
+                  style={{ fontFamily: 'var(--font-work-sans), system-ui, sans-serif' }}
+                  className="text-[0.6rem] font-medium uppercase tracking-[0.25em] text-slate-500"
+                >
+                  Forge
+                </span>
               </div>
               <p className="mt-4 text-sm text-slate-500 leading-relaxed">
                 Premium document generation API for teams that need reliable PDF rendering at scale.
@@ -458,23 +516,62 @@ export default function HomePage() {
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Product</p>
               <ul className="mt-4 space-y-2">
-                <li><Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/#pricing">Pricing</Link></li>
-                <li><Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/docs">API Docs</Link></li>
-                <li><Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/dashboard">Dashboard</Link></li>
+                <li>
+                  <Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/#pricing">
+                    Pricing
+                  </Link>
+                </li>
+                <li>
+                  <Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/docs">
+                    API Docs
+                  </Link>
+                </li>
+                <li>
+                  <Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/dashboard">
+                    Dashboard
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Developers</p>
               <ul className="mt-4 space-y-2">
-                <li><Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/docs#getting-started">Getting Started</Link></li>
-                <li><Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/docs#endpoints">API Reference</Link></li>
-                <li><Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/docs#template-guide">Template Guide</Link></li>
+                <li>
+                  <Link
+                    className="text-sm text-slate-400 hover:text-white transition-colors"
+                    href="/docs#getting-started"
+                  >
+                    Getting Started
+                  </Link>
+                </li>
+                <li>
+                  <Link className="text-sm text-slate-400 hover:text-white transition-colors" href="/docs#endpoints">
+                    API Reference
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className="text-sm text-slate-400 hover:text-white transition-colors"
+                    href="/docs#template-guide"
+                  >
+                    Template Guide
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Company</p>
               <ul className="mt-4 space-y-2">
-                <li><a className="text-sm text-slate-400 hover:text-white transition-colors" href="https://github.com/ShopHeck/daddys-home" rel="noreferrer" target="_blank">GitHub</a></li>
+                <li>
+                  <a
+                    className="text-sm text-slate-400 hover:text-white transition-colors"
+                    href="https://github.com/ShopHeck/daddys-home"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    GitHub
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
