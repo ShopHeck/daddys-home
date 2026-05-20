@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -68,7 +68,10 @@ function getVersionDiff(previousContent: string, currentContent: string) {
         continue;
       }
 
-      matrix[previousIndex][currentIndex] = Math.max(matrix[previousIndex + 1][currentIndex], matrix[previousIndex][currentIndex + 1]);
+      matrix[previousIndex][currentIndex] = Math.max(
+        matrix[previousIndex + 1][currentIndex],
+        matrix[previousIndex][currentIndex + 1]
+      );
     }
   }
 
@@ -173,8 +176,6 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
   const [content, setContent] = useState(defaultContent);
   const [sampleData, setSampleData] = useState(defaultSample);
   const [variableSchema, setVariableSchema] = useState<VariableSchema | null>(null);
-  const [schemaModified, setSchemaModified] = useState(false);
-  const [savingSchema, setSavingSchema] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewMode, setPreviewMode] = useState<'html' | 'pdf'>('html');
   const [activeTab, setActiveTab] = useState<'html' | 'css' | 'schema'>('html');
@@ -226,8 +227,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
           }
 
           setVariableSchema((previous) => (previous ? mergeSchemas(extracted, previous) : extracted));
-        } catch {
-        }
+        } catch {}
       })();
     }, 300);
 
@@ -257,7 +257,6 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       setContent(payload.content);
       setCss(payload.css ?? '');
       setVariableSchema(payload.variableSchema ?? null);
-      setSchemaModified(false);
       setCurrentVersion(payload.currentVersion ?? 1);
       setLoading(false);
     };
@@ -332,7 +331,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       const response = await fetch('/api/dashboard/templates/test-render', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, data: parsed, css: css.trim() || undefined })
+        body: JSON.stringify({ content, data: parsed, css: css.trim() || undefined }),
       });
 
       if (!response.ok) {
@@ -359,7 +358,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
     const response = await fetch(templateId ? `/api/dashboard/templates/${templateId}` : '/api/dashboard/templates', {
       method: templateId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description, content, css: css.trim() || null, variableSchema })
+      body: JSON.stringify({ name, description, content, css: css.trim() || null, variableSchema }),
     });
     const payload = (await response.json().catch(() => null)) as TemplatePayload | null;
 
@@ -381,7 +380,6 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       setContent(payload.content ?? content);
       setCss(payload.css ?? css);
       setVariableSchema(payload.variableSchema ?? variableSchema);
-      setSchemaModified(false);
       setCurrentVersion(payload.currentVersion ?? currentVersion);
       setSelectedVersionId(null);
       setSelectedVersionContent(null);
@@ -440,7 +438,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
 
     const [templateResponse, versionsResponse] = await Promise.all([
       fetch(`/api/dashboard/templates/${templateId}`, { cache: 'no-store' }),
-      fetch(`/api/dashboard/templates/${templateId}/versions`, { cache: 'no-store' })
+      fetch(`/api/dashboard/templates/${templateId}/versions`, { cache: 'no-store' }),
     ]);
     const templatePayload = (await templateResponse.json().catch(() => null)) as TemplatePayload | null;
     const versionsPayload = (await versionsResponse.json().catch(() => null)) as {
@@ -453,7 +451,6 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       setDescription(templatePayload.description ?? '');
       setContent(templatePayload.content);
       setVariableSchema(templatePayload.variableSchema ?? null);
-      setSchemaModified(false);
       setCurrentVersion(templatePayload.currentVersion ?? 1);
       setSelectedVersionId(null);
       setSelectedVersionContent(null);
@@ -476,36 +473,11 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
 
       return {
         ...previous,
-        variables: previous.variables.map((variable) => (variable.name === variableName ? updater(variable) : variable))
+        variables: previous.variables.map((variable) =>
+          variable.name === variableName ? updater(variable) : variable
+        ),
       };
     });
-    setSchemaModified(true);
-  };
-
-  const handleSaveVariableSchema = async () => {
-    if (!templateId || !variableSchema) {
-      return;
-    }
-
-    setSavingSchema(true);
-    setError('');
-
-    const response = await fetch(`/api/dashboard/templates/${templateId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ variableSchema })
-    });
-    const payload = (await response.json().catch(() => null)) as { error?: string; variableSchema?: VariableSchema } | null;
-
-    if (!response.ok || !payload?.variableSchema) {
-      setError(payload?.error ?? 'Unable to save variable descriptions.');
-      setSavingSchema(false);
-      return;
-    }
-
-    setVariableSchema(payload.variableSchema);
-    setSchemaModified(false);
-    setSavingSchema(false);
   };
 
   const handleGenerateSampleData = () => {
@@ -520,15 +492,26 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-white">{templateId ? 'Edit Template' : 'New Template'}</h1>
-          <p className="mt-2 text-sm text-slate-400">Build reusable HTML and Handlebars templates for render requests.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-white">
+            {templateId ? 'Edit Template' : 'New Template'}
+          </h1>
+          <p className="mt-2 text-sm text-slate-400">
+            Build reusable HTML and Handlebars templates for render requests.
+          </p>
         </div>
-        <Link className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" href="/dashboard/templates">
+        <Link
+          className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600"
+          href="/dashboard/templates"
+        >
           Back
         </Link>
       </div>
 
-      {loading ? <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-sm text-slate-300">Loading template...</div> : null}
+      {loading ? (
+        <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-sm text-slate-300">
+          Loading template...
+        </div>
+      ) : null}
       {error ? <p className="text-sm text-rose-400">{error}</p> : null}
 
       {!loading ? (
@@ -597,11 +580,31 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                   <div className="flex flex-wrap gap-2">
                     <span className="text-xs text-slate-400">Quick add font:</span>
                     {[
-                      { name: 'Inter', import: "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');" },
-                      { name: 'Roboto', import: "@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');" },
-                      { name: 'Open Sans', import: "@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');" },
-                      { name: 'Lato', import: "@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap');" },
-                      { name: 'Playfair Display', import: "@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');" }
+                      {
+                        name: 'Inter',
+                        import:
+                          "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');",
+                      },
+                      {
+                        name: 'Roboto',
+                        import:
+                          "@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');",
+                      },
+                      {
+                        name: 'Open Sans',
+                        import:
+                          "@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');",
+                      },
+                      {
+                        name: 'Lato',
+                        import:
+                          "@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap');",
+                      },
+                      {
+                        name: 'Playfair Display',
+                        import:
+                          "@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');",
+                      },
                     ].map((font) => (
                       <button
                         key={font.name}
@@ -647,7 +650,10 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                                 checked={variable.required}
                                 className="rounded border-slate-600"
                                 onChange={(event) =>
-                                  updateVariable(variable.name, (current) => ({ ...current, required: event.target.checked }))
+                                  updateVariable(variable.name, (current) => ({
+                                    ...current,
+                                    required: event.target.checked,
+                                  }))
                                 }
                                 type="checkbox"
                               />
@@ -657,7 +663,10 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                           <input
                             className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500"
                             onChange={(event) =>
-                              updateVariable(variable.name, (current) => ({ ...current, description: event.target.value }))
+                              updateVariable(variable.name, (current) => ({
+                                ...current,
+                                description: event.target.value,
+                              }))
                             }
                             placeholder="Add a description..."
                             type="text"
@@ -665,13 +674,17 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                           />
                           {variable.type === 'array' && variable.children && variable.children.length > 0 ? (
                             <div className="ml-3 mt-3 space-y-2 border-l border-slate-700 pl-3">
-                              <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Item fields</span>
+                              <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                                Item fields
+                              </span>
                               {variable.children.map((child) => (
                                 <div className="rounded border border-slate-700 bg-slate-950/50 p-2" key={child.name}>
                                   <div className="flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-2">
                                       <code className="text-xs text-slate-300">{child.name}</code>
-                                      <span className="rounded bg-slate-700 px-1 py-0.5 text-[10px] text-slate-500">{child.type}</span>
+                                      <span className="rounded bg-slate-700 px-1 py-0.5 text-[10px] text-slate-500">
+                                        {child.type}
+                                      </span>
                                     </div>
                                     <label className="flex items-center gap-1.5 text-[11px] text-slate-400">
                                       <input
@@ -681,8 +694,10 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                                           updateVariable(variable.name, (current) => ({
                                             ...current,
                                             children: current.children?.map((item) =>
-                                              item.name === child.name ? { ...item, required: event.target.checked } : item
-                                            )
+                                              item.name === child.name
+                                                ? { ...item, required: event.target.checked }
+                                                : item
+                                            ),
                                           }))
                                         }
                                         type="checkbox"
@@ -696,8 +711,8 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                                       updateVariable(variable.name, (current) => ({
                                         ...current,
                                         children: current.children?.map((item) =>
-                                              item.name === child.name ? { ...item, description: event.target.value } : item
-                                            )
+                                          item.name === child.name ? { ...item, description: event.target.value } : item
+                                        ),
                                       }))
                                     }
                                     placeholder="Add a field description..."
@@ -718,7 +733,11 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
               )}
             </div>
             <div className="flex flex-wrap gap-3">
-              <button className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600" onClick={() => void handlePreview()} type="button">
+              <button
+                className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600"
+                onClick={() => void handlePreview()}
+                type="button"
+              >
                 Preview HTML
               </button>
               <button
@@ -744,7 +763,9 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-semibold text-white">Preview data</h2>
-                  <p className="mt-2 text-sm text-slate-400">Edit the sample JSON used in the preview iframe and PDF test render.</p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Edit the sample JSON used in the preview iframe and PDF test render.
+                  </p>
                 </div>
                 {variableSchema && variableSchema.variables.length > 0 ? (
                   <button
@@ -768,7 +789,11 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                       if (previewMode === 'pdf') {
                         const switchMode = () => setPreviewMode('html');
                         if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-                          void (document as typeof document & { startViewTransition: (callback: () => void) => { ready: Promise<void> } }).startViewTransition(switchMode);
+                          void (
+                            document as typeof document & {
+                              startViewTransition: (callback: () => void) => { ready: Promise<void> };
+                            }
+                          ).startViewTransition(switchMode);
                         } else {
                           switchMode();
                         }
@@ -784,7 +809,11 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                       if (previewMode === 'html') {
                         const switchMode = () => setPreviewMode('pdf');
                         if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-                          void (document as typeof document & { startViewTransition: (callback: () => void) => { ready: Promise<void> } }).startViewTransition(switchMode);
+                          void (
+                            document as typeof document & {
+                              startViewTransition: (callback: () => void) => { ready: Promise<void> };
+                            }
+                          ).startViewTransition(switchMode);
                         } else {
                           switchMode();
                         }
@@ -800,11 +829,17 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
               {previewMode === 'html' ? (
                 <>
                   {previewError ? <p className="mt-3 text-sm text-rose-400">{previewError}</p> : null}
-                  <div style={{ viewTransitionName: 'preview-panel' }} className="mt-4 overflow-hidden rounded-lg border border-slate-700 bg-white">
+                  <div
+                    style={{ viewTransitionName: 'preview-panel' }}
+                    className="mt-4 overflow-hidden rounded-lg border border-slate-700 bg-white"
+                  >
                     <iframe
                       className="h-[420px] w-full"
                       sandbox="allow-same-origin"
-                      srcDoc={previewHtml || '<html><body style="font-family: Arial; padding: 24px; color: #64748b;">Click Preview HTML to render this template.</body></html>'}
+                      srcDoc={
+                        previewHtml ||
+                        '<html><body style="font-family: Arial; padding: 24px; color: #64748b;">Click Preview HTML to render this template.</body></html>'
+                      }
                       title="Template HTML preview"
                     />
                   </div>
@@ -812,12 +847,17 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
               ) : (
                 <>
                   {renderError ? <p className="mt-3 text-sm text-rose-400">{renderError}</p> : null}
-                  <div style={{ viewTransitionName: 'preview-panel' }} className="mt-4 overflow-hidden rounded-lg border border-slate-700 bg-white">
+                  <div
+                    style={{ viewTransitionName: 'preview-panel' }}
+                    className="mt-4 overflow-hidden rounded-lg border border-slate-700 bg-white"
+                  >
                     {pdfUrl ? (
                       <iframe className="h-[420px] w-full" src={pdfUrl} title="Template PDF preview" />
                     ) : (
                       <div className="flex h-[420px] items-center justify-center px-6 text-center text-sm text-slate-500">
-                        {rendering ? 'Rendering PDF preview...' : 'Click Test Render PDF to generate an inline server-rendered PDF preview.'}
+                        {rendering
+                          ? 'Rendering PDF preview...'
+                          : 'Click Test Render PDF to generate an inline server-rendered PDF preview.'}
                       </div>
                     )}
                   </div>
@@ -857,9 +897,13 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                             <div className="flex items-center justify-between gap-4">
                               <div>
                                 <span className="font-medium text-white">v{version.version}</span>
-                                {version.version === currentVersion ? <span className="ml-2 text-xs text-blue-300">(current)</span> : null}
+                                {version.version === currentVersion ? (
+                                  <span className="ml-2 text-xs text-blue-300">(current)</span>
+                                ) : null}
                               </div>
-                              <span className="text-xs text-slate-400">{new Date(version.createdAt).toLocaleDateString()}</span>
+                              <span className="text-xs text-slate-400">
+                                {new Date(version.createdAt).toLocaleDateString()}
+                              </span>
                             </div>
                             <p className="mt-1 truncate text-xs text-slate-400">{version.name}</p>
                             {version.version !== currentVersion ? (
@@ -891,7 +935,9 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
                         <div className="flex items-center justify-between gap-4">
                           <div>
                             <p className="text-sm font-medium text-white">Version {selectedVersion?.version} diff</p>
-                            <p className="mt-1 text-xs text-slate-400">Comparing the selected snapshot against the current editor state.</p>
+                            <p className="mt-1 text-xs text-slate-400">
+                              Comparing the selected snapshot against the current editor state.
+                            </p>
                           </div>
                           <button
                             className="text-xs text-slate-400 hover:text-white"
