@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
-import { useState } from "react";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
+import { useState } from 'react';
 
 type Team = {
   id: string;
@@ -24,15 +24,16 @@ type DashboardShellProps = {
 };
 
 const navigation = [
-  { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/templates", label: "Templates" },
-  { href: "/dashboard/api-keys", label: "API Keys" },
-  { href: "/dashboard/usage", label: "Usage" },
-  { href: "/dashboard/render-history", label: "Render History" },
-  { href: "/dashboard/webhooks", label: "Webhooks" },
+  { href: '/dashboard', label: 'Overview' },
+  { href: '/dashboard/templates', label: 'Templates' },
+  { href: '/dashboard/api-keys', label: 'API Keys' },
+  { href: '/dashboard/usage', label: 'Usage' },
+  { href: '/dashboard/analytics', label: 'Analytics' },
+  { href: '/dashboard/render-history', label: 'Render History' },
+  { href: '/dashboard/webhooks', label: 'Webhooks' },
   {
-    href: "/dashboard/billing",
-    label: "Billing",
+    href: '/dashboard/billing',
+    label: 'Billing',
     icon: (
       <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
         <rect height="14" rx="2" stroke="currentColor" strokeWidth="1.75" width="20" x="2" y="5" />
@@ -41,26 +42,26 @@ const navigation = [
       </svg>
     ),
   },
-  { href: "/dashboard/teams", label: "Team Settings" },
-  { href: "/docs", label: "Documentation" },
+  { href: '/dashboard/teams', label: 'Team Settings' },
+  { href: '/docs', label: 'Documentation' },
 ];
 
 const roleLabels: Record<string, string> = {
-  OWNER: "Owner",
-  ADMIN: "Admin",
-  MEMBER: "Member",
+  OWNER: 'Owner',
+  ADMIN: 'Admin',
+  MEMBER: 'Member',
 };
 
 export function DashboardShell({ children, user, activeTeam, teams = [], tier }: DashboardShellProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [teamDropdownOpen, setTeamDropdownOpen] = useState(false);
-  const displayName = user.name || user.email || "DocForge user";
+  const displayName = user.name || user.email || 'DocForge user';
 
   const switchTeam = async (teamId: string) => {
-    const response = await fetch("/api/dashboard/teams/switch", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/dashboard/teams/switch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ teamId }),
     });
 
@@ -74,15 +75,12 @@ export function DashboardShell({ children, user, activeTeam, teams = [], tier }:
       <div className="flex min-h-screen">
         <aside
           className={[
-            "fixed inset-y-0 left-0 z-50 w-72 border-r border-slate-800 bg-slate-950/95 p-6 transition-transform duration-200 md:static md:translate-x-0",
-            isOpen ? "translate-x-0" : "-translate-x-full",
-          ].join(" ")}
+            'fixed inset-y-0 left-0 z-50 w-72 border-r border-slate-800 bg-slate-950/95 p-6 transition-transform duration-200 md:static md:translate-x-0',
+            isOpen ? 'translate-x-0' : '-translate-x-full',
+          ].join(' ')}
         >
           <div className="flex items-center justify-between md:block">
-            <Link
-              className="flex items-center gap-3 text-sm font-semibold text-white"
-              href="/dashboard"
-            >
+            <Link className="flex items-center gap-3 text-sm font-semibold text-white" href="/dashboard">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/40 bg-blue-500/10 text-blue-300">
                 DF
               </span>
@@ -111,27 +109,19 @@ export function DashboardShell({ children, user, activeTeam, teams = [], tier }:
                     <p className="text-sm font-medium text-white">{activeTeam.name}</p>
                   </div>
                   <svg
-                    className={["h-4 w-4 text-slate-400 transition", teamDropdownOpen ? "rotate-180" : ""].join(" ")}
+                    className={['h-4 w-4 text-slate-400 transition', teamDropdownOpen ? 'rotate-180' : ''].join(' ')}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
               </button>
 
               {teamDropdownOpen ? (
                 <>
-                  <div
-                    className="fixed inset-0 z-40 hidden md:block"
-                    onClick={() => setTeamDropdownOpen(false)}
-                  />
+                  <div className="fixed inset-0 z-40 hidden md:block" onClick={() => setTeamDropdownOpen(false)} />
                   <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-slate-700 bg-slate-800 shadow-xl">
                     <div className="max-h-60 overflow-y-auto py-1">
                       {teams.map((team) => (
@@ -144,16 +134,14 @@ export function DashboardShell({ children, user, activeTeam, teams = [], tier }:
                             setTeamDropdownOpen(false);
                           }}
                           className={[
-                            "w-full px-4 py-2 text-left transition",
-                            team.id === activeTeam.id ? "bg-blue-600/20" : "hover:bg-slate-700",
-                          ].join(" ")}
+                            'w-full px-4 py-2 text-left transition',
+                            team.id === activeTeam.id ? 'bg-blue-600/20' : 'hover:bg-slate-700',
+                          ].join(' ')}
                           type="button"
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-white">{team.name}</span>
-                            {team.id === activeTeam.id ? (
-                              <span className="text-xs text-blue-400">Active</span>
-                            ) : null}
+                            {team.id === activeTeam.id ? <span className="text-xs text-blue-400">Active</span> : null}
                           </div>
                           <div className="flex items-center gap-2 text-xs text-slate-400">
                             <span>{roleLabels[team.role]}</span>
@@ -179,19 +167,14 @@ export function DashboardShell({ children, user, activeTeam, teams = [], tier }:
 
           <nav className="mt-6 space-y-2">
             {navigation.map((item) => {
-              const isActive =
-                item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href);
+              const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href);
               return (
                 <Link
                   key={item.href}
                   className={[
-                    "flex items-center gap-3 rounded-lg px-4 py-3 text-sm transition",
-                    isActive
-                      ? "bg-blue-600 text-white"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white",
-                  ].join(" ")}
+                    'flex items-center gap-3 rounded-lg px-4 py-3 text-sm transition',
+                    isActive ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white',
+                  ].join(' ')}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
                 >
@@ -245,7 +228,7 @@ export function DashboardShell({ children, user, activeTeam, teams = [], tier }:
             </div>
             <button
               className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-600"
-              onClick={() => signOut({ callbackUrl: "/auth/login" })}
+              onClick={() => signOut({ callbackUrl: '/auth/login' })}
               type="button"
             >
               Sign out
