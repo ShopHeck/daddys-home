@@ -1,8 +1,18 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState, Children, cloneElement, isValidElement, type ReactElement, type ReactNode, type CSSProperties } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  Children,
+  cloneElement,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  type CSSProperties,
+} from 'react';
 
-import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 type RevealGridProps = {
   children: ReactNode;
@@ -20,25 +30,23 @@ export function RevealGrid({ children, className }: RevealGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const prefersReducedMotion = usePrefersReducedMotion();
-  const [mounted, setMounted] = useState(false);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (prefersReducedMotion) {
+    // Only enable animation if IntersectionObserver is supported and
+    // user hasn't opted out of motion
+    if (prefersReducedMotion || !('IntersectionObserver' in window)) {
       setIsVisible(true);
       return;
     }
 
-    if (!("IntersectionObserver" in window)) {
-      setIsVisible(true);
-      return;
-    }
+    setShouldAnimate(true);
 
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) {
+      setIsVisible(true);
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -49,7 +57,7 @@ export function RevealGrid({ children, className }: RevealGridProps) {
           }
         });
       },
-      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
     );
 
     observer.observe(container);
@@ -57,8 +65,13 @@ export function RevealGrid({ children, className }: RevealGridProps) {
     return () => observer.disconnect();
   }, [prefersReducedMotion]);
 
-  if (!mounted || prefersReducedMotion) {
-    return <div className={className}>{children}</div>;
+  // Before JS hydrates or if animation is disabled, render children fully visible
+  if (!shouldAnimate) {
+    return (
+      <div ref={containerRef} className={className}>
+        {children}
+      </div>
+    );
   }
 
   const childrenArray = Children.toArray(children);
@@ -87,12 +100,12 @@ export function RevealGrid({ children, className }: RevealGridProps) {
       {childrenArray.map((child, index) => {
         if (!isValidElement(child)) return child;
         const childProps = child.props as ElementProps;
-        const existingClassName = childProps?.className || "";
-        const newClassName = `${existingClassName} reveal-item ${isVisible ? "revealed" : ""}`.trim();
+        const existingClassName = childProps?.className || '';
+        const newClassName = `${existingClassName} reveal-item ${isVisible ? 'revealed' : ''}`.trim();
         const existingStyle = childProps?.style || {};
         const newStyle: CSSProperties = {
           ...existingStyle,
-          "--index": index,
+          '--index': index,
         } as CSSProperties;
 
         return cloneElement(child as ReactElement<ElementProps>, {
